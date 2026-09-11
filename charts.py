@@ -18,11 +18,17 @@ def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -
                                      line=dict(color=color, width=1.1, dash=dash),
                                      opacity=0.9), row=1, col=1)
     if flags:
-        for f in flags:
-            if f["date"] in d.index or True:
-                fig.add_vline(x=f["date"], line_dash="dot", line_color="#FFB020",
-                              annotation_text=f["type"], annotation_position="top",
-                              row=1, col=1)
+        fcolors = {"Spring?": "#FFB020", "Breakout": "#2DD4A7", "Test?": "#4C8DFF"}
+        top = float(d["Close"].max())
+        for i, f in enumerate(flags[-8:]):
+            col = fcolors.get(f["type"], "#9AA4B2")
+            fig.add_vline(x=f["date"], line_dash="dot", line_color=col,
+                          opacity=0.55, row=1, col=1)
+            fig.add_annotation(x=f["date"], y=top, xref="x", yref="y",
+                               text=f"<b>{f['type']}</b>", showarrow=False,
+                               yshift=-16 - 28 * (i % 3),
+                               font=dict(size=12, color="white"),
+                               bgcolor=col, borderpad=4, opacity=0.92)
     colors = np.where(d["Close"] >= d["Open"], "#2DD4A7", "#FF5C5C")
     fig.add_trace(go.Bar(x=d.index, y=d["Volume"], name="Volume",
                          marker_color=colors, opacity=0.45), row=2, col=1)
@@ -103,6 +109,37 @@ def rs_chart(rs_stock: pd.Series, rs_sector: pd.Series | None) -> go.Figure:
     fig.update_layout(height=340, margin=dict(l=10, r=10, t=30, b=10),
                       title="Relative strength (rebased to 100) — rising = hidden demand",
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))
+    return fig
+
+
+def target_range(lo, mean, hi, price=None):
+    """Horizontal analyst target-range bar with labeled Low/Mean/High markers."""
+    fig = go.Figure()
+    span = max(hi - lo, lo * 0.02)
+    pad = span * 0.22
+    fig.add_shape(type="line", x0=lo, x1=hi, y0=0, y1=0,
+                  line=dict(color="rgba(150,150,150,0.9)", width=12))
+    for x, name, col in ((lo, "Low", "#ff6b6b"), (mean, "Mean", "#ffd43b"),
+                         (hi, "High", "#51cf66")):
+        fig.add_trace(go.Scatter(x=[x], y=[0], mode="markers", showlegend=False,
+                                 hovertemplate=f"{name}: $%{{x:,.0f}}<extra></extra>",
+                                 marker=dict(size=15, color=col,
+                                             line=dict(color="black", width=1))))
+        fig.add_annotation(x=x, y=0, text=f"<b>{name}</b><br>${x:,.0f}",
+                           showarrow=False, yshift=-42,
+                           font=dict(size=13, color=col), align="center")
+    if price:
+        fig.add_vline(x=price, line_dash="dash", line_color="white", opacity=0.85)
+        fig.add_annotation(x=price, y=0, text=f"<b>Now</b><br>${price:,.0f}",
+                           showarrow=False, yshift=44,
+                           font=dict(size=13, color="white"),
+                           bgcolor="rgba(0,0,0,0.65)", borderpad=4, align="center")
+    fig.update_xaxes(range=[lo - pad, hi + pad])
+    fig.update_yaxes(range=[-1.2, 1.2], showticklabels=False, zeroline=False)
+    fig.update_layout(height=260, margin=dict(t=36, b=44, l=10, r=10),
+                      title="Analyst price-target range (12-mo)", font_color="white",
+                      template="plotly_dark",
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     return fig
 
 

@@ -244,6 +244,10 @@ with tabs[3]:
                   f"{(tgt['mean'] / price - 1) * 100:+.1f}% vs price" if price else None)
         c2.metric("Target range", f"{fmt_money(tgt.get('low'))} – {fmt_money(tgt.get('high'))}")
         c3.metric("Analysts", tgt.get("numberOfAnalysts") or "n/a")
+        if tgt.get("low") and tgt.get("high"):
+            st.plotly_chart(charts.target_range(tgt["low"], tgt["mean"],
+                                                tgt["high"], price),
+                            width="stretch")
     else:
         st.info("No analyst price targets available for this ticker right now — "
                 "Yahoo may be rate-limiting. (Google Finance blocks automated access, "
