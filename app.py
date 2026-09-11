@@ -344,6 +344,63 @@ with tabs[1]:
             st.info("Not enough statement history to score quality for this ticker.")
         if not q["roic"].empty:
             st.plotly_chart(charts.roic_chart(q["roic"]), width="stretch")
+
+        st.markdown("### Growth valuation — VC / exit-multiple method")
+        st.caption("For unprofitable growers: project revenue to a horizon year, apply a mature "
+                   "EV/Sales multiple, discount back at a hurdle rate. A cross-check for the DCF — "
+                   "not a replacement for profitable companies.")
+        gc = D.get_consensus_growth(ticker)
+        v1 = st.columns(4)
+        rev0 = v1[0].number_input("VC current revenue ($M)",
+                                 value=fund["rev"] / 1e6 if fund.get("rev") else 0.0,
+                                 step=10.0, format="%.1f")
+        gvc = v1[1].number_input("VC revenue CAGR %", value=gc["g_early"] * 100, step=5.0) / 100
+        nvc = int(v1[2].number_input("VC horizon (yrs)", value=5, min_value=1, max_value=15, step=1))
+        mult = v1[3].number_input("VC exit EV/Sales", value=8.0, step=0.5)
+        v2 = st.columns(3)
+        hurdle = v2[0].number_input("VC hurdle rate %", value=15.0, step=0.5) / 100
+        ndvc = v2[1].number_input("VC net debt ($M)",
+                                 value=fund["net_debt"] / 1e6 if fund.get("net_debt") else 0.0,
+                                 step=10.0, format="%.1f")
+        shvc = v2[2].number_input("VC shares (M)",
+                                 value=fund["shares"] / 1e6 if fund.get("shares") else 0.0,
+                                 step=10.0, format="%.1f")
+
+        def _vcv(gg, mm):
+            if rev0 <= 0 or shvc <= 0 or mm <= 0 or (1 + hurdle) <= 0:
+                return None
+            fut_rev = rev0 * (1 + gg) ** nvc
+            pv_ev = fut_rev * mm / (1 + hurdle) ** nvc
+            return (pv_ev - ndvc) / shvc
+
+        vcv = _vcv(gvc, mult)
+        if vcv is not None:
+            fut_rev = rev0 * (1 + gvc) ** nvc
+            pv_ev = fut_rev * mult / (1 + hurdle) ** nvc
+            c1, c2 = st.columns(2)
+            c1.metric("VC-implied value", fmt_money(vcv), f"{vcv / price - 1:+.1%} vs price")
+            need = (price * shvc + ndvc) * (1 + hurdle) ** nvc / mult
+            impl_g = (need / rev0) ** (1 / nvc) - 1 if need > 0 else None
+            c2.metric("Revenue CAGR priced in", f"{impl_g * 100:.0f}%" if impl_g is not None else "n/a",
+                      "at this exit multiple & hurdle" if impl_g is not None else None)
+            st.caption(f"Year-{nvc} revenue {fmt_big(fut_rev * 1e6)} → future EV "
+                       f"{fmt_big(fut_rev * mult * 1e6)} at {mult:.1f}x sales → PV "
+                       f"{fmt_big(pv_ev * 1e6)} at {hurdle * 100:.0f}% hurdle → equity "
+                       f"{fmt_big((pv_ev - ndvc) * 1e6)} after net debt → {fmt_money(vcv)}/sh "
+                       f"on {shvc:,.0f}M shares.")
+            st.markdown("**Sensitivity — per-share value across growth × exit multiple**")
+            g_vals = [max(0.0, gvc + d) for d in (-0.20, -0.10, 0.0, 0.10, 0.20)]
+            m_vals = [max(0.5, mult + d) for d in (-4.0, -2.0, 0.0, 2.0, 4.0)]
+            grid = pd.DataFrame(
+                [[_vcv(gg, mm) for mm in m_vals] for gg in g_vals],
+                index=[f"{gg * 100:.0f}% CAGR" for gg in g_vals],
+                columns=[f"{mm:.0f}x sales" for mm in m_vals])
+            st.dataframe(grid.style.format("${:,.0f}").background_gradient(cmap="RdYlGn"),
+                         width="stretch")
+            st.caption("Ignores future dilution and the cash burn to get there — treat this as the "
+                       "destination value, then haircut for the journey.")
+        else:
+            st.info("Enter current revenue and shares to run the growth valuation.")
     except ValueError as e:
         st.error(str(e))
 
