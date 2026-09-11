@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-def price_chart(df: pd.DataFrame, flags: list | None = None) -> go.Figure:
+def price_chart(df: pd.DataFrame) -> go.Figure:
     d = df  # caller controls the visible window via the range pills
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25],
                         vertical_spacing=0.03)
@@ -17,16 +17,6 @@ def price_chart(df: pd.DataFrame, flags: list | None = None) -> go.Figure:
             fig.add_trace(go.Scatter(x=d.index, y=d[col], name=col,
                                      line=dict(color=color, width=1.1, dash=dash),
                                      opacity=0.9), row=1, col=1)
-    if flags:
-        fcolors = {"Spring?": "#FFB020", "Breakout": "#2DD4A7", "Test?": "#4C8DFF"}
-        top = float(d["Close"].max())
-        for i, f in enumerate(flags[-6:]):
-            col = fcolors.get(f["type"], "#9AA4B2")
-            fig.add_annotation(x=f["date"], y=top, xref="x", yref="y",
-                               text=f"<b>{f['type']}</b>", showarrow=False,
-                               yshift=-16 - 28 * (i % 3),
-                               font=dict(size=12, color="white"),
-                               bgcolor=col, borderpad=4, opacity=0.92)
     colors = np.where(d["Close"] >= d["Open"], "#2DD4A7", "#FF5C5C")
     fig.add_trace(go.Bar(x=d.index, y=d["Volume"], name="Volume",
                          marker_color=colors, opacity=0.45), row=2, col=1)

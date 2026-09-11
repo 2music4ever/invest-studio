@@ -79,7 +79,19 @@ with tabs[0]:
     else:
         cdf = px.iloc[-_days[rng]:]
     flags = [f for f in T.wyckoff_flags(px) if f["date"] >= cdf.index[0]]
-    st.plotly_chart(charts.price_chart(cdf, flags=flags), width="stretch")
+    st.plotly_chart(charts.price_chart(cdf), width="stretch")
+
+    st.markdown("### Wyckoff-style structure flags (heuristic)")
+    if flags:
+        fdf = pd.DataFrame([{"Date": f["date"].strftime("%Y-%m-%d"),
+                             "Signal": f["type"], "Reading": f["note"]}
+                            for f in flags])
+        st.dataframe(fdf, width="stretch", hide_index=True)
+        st.caption("Rule-based sketches from price/volume — spring = wick below the 60-day low "
+                   "that closes back inside; breakout = close above the 60-day high on 1.5× volume; "
+                   "test = narrow day holding above the spring low. Educational, not confirmed analysis.")
+    else:
+        st.caption("No structure flags in this range.")
 
     st.markdown("### Historical valuation bands")
     pe = D.get_ttm_pe(ticker, px["Close"])
