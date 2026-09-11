@@ -82,10 +82,6 @@ with tabs[0]:
     flags = [f for f in T.wyckoff_flags(px) if f["date"] >= cdf.index[0]]
     st.plotly_chart(charts.price_chart(cdf, log=log_scale, flags=flags),
                     width="stretch")
-    st.caption("Dashed lines are the **50- and 200-week moving averages** — the long-term trend "
-               "filter. They move slowly, so on short zooms they look like diagonals. "
-               "**Dotted vertical lines** mark Wyckoff-style signal dates (spring / breakout / test) "
-               "from the Accumulation tab.")
 
     st.markdown("### Historical valuation bands")
     pe = D.get_ttm_pe(ticker, px["Close"])
