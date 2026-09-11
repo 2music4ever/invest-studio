@@ -66,7 +66,6 @@ with tabs[0]:
     c3.metric("Trailing P/E", f"{snap['trailing_pe']:.1f}" if snap["trailing_pe"] else "n/a")
     c4.metric("Forward P/E", f"{snap['forward_pe']:.1f}" if snap["forward_pe"] else "n/a")
     c5.metric("PEG", f"{snap['peg']:.2f}" if snap["peg"] else "n/a")
-    st.markdown(f"**Trend regime:** :{regime_color}[{regime_text}]")
     rng = st.pills("Chart range", ["3M", "6M", "YTD", "1Y", "3Y", "5Y", "10Y"],
                    default="3Y", key="chart_rng")
     _days = {"3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520}
@@ -80,6 +79,12 @@ with tabs[0]:
         cdf = px.iloc[-_days[rng]:]
     flags = [f for f in T.wyckoff_flags(px) if f["date"] >= cdf.index[0]]
     st.plotly_chart(charts.price_chart(cdf), width="stretch")
+
+    st.markdown("### Trend readout")
+    ro = T.trend_readout(px)
+    st.markdown(f"**Regime:** {ro['regime']}")
+    for b in ro["bullets"]:
+        st.markdown(f"- {b}")
 
     st.markdown("### Wyckoff-style structure flags (heuristic)")
     if flags:

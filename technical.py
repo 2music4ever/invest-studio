@@ -27,6 +27,82 @@ def regime(price: float, wma50: float, wma200: float) -> tuple[str, str]:
     return ("Below long-term trend — falling-knife check required", "red")
 
 
+def trend_readout(df: pd.DataFrame) -> dict:
+    """Automated chart reading: price vs MAs, MA vs MA, crossovers, MA slope,
+    distance from 52-week high. Returns {'regime': str, 'bullets': [str]}."""
+    d = df.dropna(subset=["Close"])
+    bullets: list[str] = []
+    if d.empty:
+        return {"regime": "Not enough data", "bullets": bullets}
+    last = d.iloc[-1]
+    price = float(last["Close"])
+
+    def _pct(a, b):
+        return (a / b - 1) * 100 if b else float("nan")
+
+    # Price vs daily MAs
+    for col, label in (("MA50", "50-day"), ("MA200", "200-day")):
+        v = last.get(col, np.nan)
+        if col in d and not np.isnan(v):
+            p = _pct(price, float(v))
+            side = "above" if p >= 0 else "below"
+            bullets.append(f"Price is **{abs(p):.1f}% {side}** the {label} moving average "
+                           f"(${float(v):,.2f}).")
+
+    # Golden/death cross + recent crossover
+    if "MA50" in d and "MA200" in d:
+        s = (d["MA50"] - d["MA200"]).dropna()
+        if len(s) >= 2 and not np.isnan(s.iloc[-1]):
+            cur = float(np.sign(s.iloc[-1]))
+            if cur > 0:
+                state = "**Golden cross** — 50-day above 200-day"
+            elif cur < 0:
+                state = "**Death cross** — 50-day below 200-day"
+            else:
+                state = "50-day and 200-day are effectively tied"
+            cross_date = None
+            for i in range(len(s) - 2, -1, -1):
+                if float(np.sign(s.iloc[i])) not in (cur, 0.0):
+                    cross_date = s.index[i + 1]
+                    break
+            if cross_date is not None and (s.index[-1] - cross_date).days <= 120:
+                kind = "golden cross" if cur > 0 else "death cross"
+                state += f" — the {kind} fired on {cross_date.strftime('%Y-%m-%d')}"
+            bullets.append(state + ".")
+
+    # MA50 slope
+    if "MA50" in d:
+        m = d["MA50"].dropna()
+        if len(m) >= 22:
+            chg = (m.iloc[-1] / m.iloc[-22] - 1) * 100
+            direction = "rising" if chg >= 0 else "falling"
+            bullets.append(f"The 50-day average is **{direction}** ({chg:+.1f}% over the last month).")
+
+    # Weekly picture
+    for col, label in (("WMA50", "50-week"), ("WMA200", "200-week")):
+        v = last.get(col, np.nan)
+        if col in d and not np.isnan(v):
+            p = _pct(price, float(v))
+            side = "above" if p >= 0 else "below"
+            bullets.append(f"Price is **{abs(p):.1f}% {side}** the {label} average "
+                           f"(${float(v):,.2f}).")
+    if "WMA50" in d and "WMA200" in d:
+        a, b = last.get("WMA50", np.nan), last.get("WMA200", np.nan)
+        if not np.isnan(a) and not np.isnan(b):
+            p = _pct(float(a), float(b))
+            rel = "above" if p >= 0 else "below"
+            bullets.append(f"The 50-week average sits **{abs(p):.1f}% {rel}** the 200-week average.")
+
+    # Distance from 52-week high
+    if "High" in d:
+        hi = float(d["High"].iloc[-260:].max())
+        off = (price / hi - 1) * 100
+        bullets.append(f"**{abs(off):.1f}% below** the 52-week high (${hi:,.2f}).")
+
+    regime_text, _ = regime(price, last.get("WMA50", np.nan), last.get("WMA200", np.nan))
+    return {"regime": regime_text, "bullets": bullets}
+
+
 def vpvr(df: pd.DataFrame, bins: int = 36) -> pd.DataFrame:
     """Volume profile by price: volume traded in each price bin."""
     lo, hi = df["Low"].min(), df["High"].max()
