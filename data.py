@@ -218,6 +218,98 @@ def get_consensus_growth(ticker: str) -> dict:
 
 
 @st.cache_data(ttl=86400, show_spinner=False)
+def get_buyback_yield(ticker: str) -> dict:
+    """Latest-annual share repurchases / market cap."""
+    out = {"yield": 0.0, "amount": None, "year": None}
+    try:
+        a = get_annuals(ticker)
+        repo = _row(a["cashflow"], "repurchase of capital stock")
+        snap = get_snapshot(ticker)
+        mcap = snap.get("market_cap")
+        if repo is not None and not repo.dropna().empty and mcap:
+            amt = abs(float(repo.dropna().iloc[0]))
+            out.update({"yield": amt / mcap, "amount": amt,
+                        "year": str(repo.dropna().index[0])[:4]})
+    except Exception:
+        pass
+    return out
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_quality(ticker: str) -> dict:
+    """Piotroski F-score (latest annual vs prior) and ROIC trend.
+
+    ROIC = EBIT * (1 - tax rate) / Invested Capital, tax rate from the statements
+    (21% fallback). Criteria that lack data are skipped, not scored.
+    """
+    a = get_annuals(ticker)
+    inc, cf, bs = a["financials"], a["cashflow"], a["balance_sheet"]
+    out = {"f_score": None, "f_max": 0, "f_detail": [], "roic": pd.DataFrame()}
+
+    def col2(s):
+        if s is None or s.empty:
+            return None, None
+        s = s.dropna()
+        v0 = float(s.iloc[0]) if len(s) > 0 else None
+        v1 = float(s.iloc[1]) if len(s) > 1 else None
+        return v0, v1
+
+    ni = col2(_row(inc, "net income"))
+    ta = col2(_row(bs, "total assets"))
+    cfo = col2(_row(cf, "operating cash flow"))
+    ltd = col2(_row(bs, "long term debt"))
+    ca = col2(_row(bs, "current assets"))
+    cl = col2(_row(bs, "current liabilities"))
+    sh = col2(_row(bs, "ordinary shares number"))
+    gp = col2(_row(inc, "gross profit"))
+    rev = col2(_row(inc, "total revenue"))
+
+    checks = []
+    if ni[0] is not None and ta[0]:
+        checks.append(("ROA positive", ni[0] / ta[0] > 0))
+    if cfo[0] is not None:
+        checks.append(("Operating cash flow positive", cfo[0] > 0))
+    if ni[0] is not None and ni[1] is not None and ta[0] and ta[1]:
+        checks.append(("ROA improving", ni[0] / ta[0] > ni[1] / ta[1]))
+    if cfo[0] is not None and ni[0] is not None:
+        checks.append(("Cash-backed earnings (CFO > net income)", cfo[0] > ni[0]))
+    if ltd[0] is not None and ltd[1] is not None and ta[0] and ta[1]:
+        checks.append(("Leverage falling", ltd[0] / ta[0] < ltd[1] / ta[1]))
+    if None not in (ca[0], ca[1], cl[0], cl[1]) and cl[0] and cl[1]:
+        checks.append(("Liquidity improving", ca[0] / cl[0] > ca[1] / cl[1]))
+    if sh[0] is not None and sh[1] is not None and sh[1]:
+        checks.append(("No share dilution", sh[0] <= sh[1] * 1.001))
+    if None not in (gp[0], gp[1], rev[0], rev[1]) and rev[0] and rev[1]:
+        checks.append(("Gross margin improving", gp[0] / rev[0] > gp[1] / rev[1]))
+    if rev[0] is not None and rev[1] is not None and ta[0] and ta[1]:
+        checks.append(("Asset turnover improving", rev[0] / ta[0] > rev[1] / ta[1]))
+
+    out["f_detail"] = checks
+    out["f_max"] = len(checks)
+    out["f_score"] = sum(1 for _, p in checks if p)
+
+    ebit = _row(inc, "ebit")
+    tax = _row(inc, "tax provision")
+    pretax = _row(inc, "pretax income")
+    icap = _row(bs, "invested capital")
+    if ebit is not None and icap is not None:
+        rows = []
+        for col in ebit.dropna().index:
+            try:
+                e = float(ebit[col])
+                ic = float(icap[col]) if col in icap.index and pd.notna(icap[col]) else 0
+                t = float(tax[col]) if tax is not None and col in tax.index and pd.notna(tax[col]) else None
+                pt = float(pretax[col]) if pretax is not None and col in pretax.index and pd.notna(pretax[col]) else None
+                tr = (t / pt) if (t is not None and pt) else 0.21
+                if ic:
+                    rows.append({"Year": str(col)[:4], "ROIC": e * (1 - tr) / ic})
+            except (TypeError, ValueError):
+                continue
+        out["roic"] = pd.DataFrame(rows).sort_values("Year")
+    return out
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
 def get_ttm_pe(ticker: str, price: pd.Series) -> pd.DataFrame:
     """Historical P/E: weekly TTM P/E for the recent year (quarterly
     statements) plus annual P/E points for earlier years. Approximation."""

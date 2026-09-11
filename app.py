@@ -296,6 +296,54 @@ with tabs[1]:
                                             "PV of FCF": "{:,.0f}", "FCF margin": "{:.1%}"}),
                          width="stretch")
             st.caption("Figures in $M.")
+
+        st.markdown("### Expected return bridge — where the return comes from")
+        bb = D.get_buyback_yield(ticker)
+        pe_hist = D.get_ttm_pe(ticker, px["Close"])
+        pe_now = snap.get("trailing_pe")
+        pe_med = float(pe_hist["pe"].median()) if not pe_hist.empty else None
+        bc = st.columns(5)
+        div_d = bc[0].number_input("Dividend yield %", value=(snap.get("div_yield") or 0) * 100,
+                                  step=0.05) / 100
+        bb_d = bc[1].number_input("Buyback yield %", value=bb["yield"] * 100, step=0.05) / 100
+        g_d = bc[2].number_input("Earnings growth %", value=g1 * 100, step=0.5) / 100
+        pe_t = bc[3].number_input("Target P/E", value=round(pe_med, 1) if pe_med else (pe_now or 20.0),
+                                 step=0.5)
+        yrs = int(bc[4].number_input("Horizon (yrs)", value=5, min_value=1, max_value=10, step=1))
+        rerate = (pe_t / pe_now) ** (1 / yrs) - 1 if (pe_now and pe_t > 0) else 0.0
+        total_a = div_d + bb_d + g_d + rerate
+        total_n = (1 + total_a) ** yrs - 1
+        st.plotly_chart(charts.bridge_chart(
+            [("Dividends", div_d), ("Buybacks", bb_d),
+             ("Earnings growth", g_d), ("Multiple re-rating", rerate)], total_a),
+            width="stretch")
+        st.markdown(f"**Expected return: {total_a * 100:.1f}%/yr** "
+                    f"({total_n * 100:+.0f}% over {yrs}y).")
+        bcap = ("Annualized: dividend yield + buyback yield + earnings growth + "
+                "multiple re-rating, where re-rating = (target P/E ÷ current P/E)^(1/yrs) − 1. ")
+        if bb["amount"]:
+            bcap += (f"Buyback yield from {bb['year']} repurchases ({fmt_big(bb['amount'])}) ÷ market cap. ")
+        if pe_med:
+            bcap += f"Target P/E defaults to the historical median ({pe_med:.1f})."
+        st.caption(bcap)
+
+        st.markdown("### Quality check — is it a compounder?")
+        q = D.get_quality(ticker)
+        if q["f_max"]:
+            qc1, qc2 = st.columns([1, 2])
+            with qc1:
+                st.metric("Piotroski F-score", f"{q['f_score']}/{q['f_max']}")
+                s = q["f_score"]
+                st.markdown(f"**{'Strong' if s >= 7 else 'Average' if s >= 4 else 'Weak'}**")
+                st.caption("9-point financial-strength score comparing the latest annual "
+                           "to the prior one: 7–9 strong, 4–6 average, 0–3 weak.")
+            with qc2:
+                st.table(pd.DataFrame([{"Check": c, "Pass": "✓" if p else "✗"}
+                                       for c, p in q["f_detail"]]))
+        else:
+            st.info("Not enough statement history to score quality for this ticker.")
+        if not q["roic"].empty:
+            st.plotly_chart(charts.roic_chart(q["roic"]), width="stretch")
     except ValueError as e:
         st.error(str(e))
 

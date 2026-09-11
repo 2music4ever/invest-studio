@@ -188,3 +188,27 @@ def scenario_bars(scenarios: pd.DataFrame, price: float) -> go.Figure:
                       title="Bear / base / bull intrinsic values vs current price",
                       template="plotly_dark", yaxis_title="Per-share value ($)")
     return fig
+
+
+def bridge_chart(items: list[tuple[str, float]], total: float) -> go.Figure:
+    """Waterfall of expected-return components (fractions) summing to the total."""
+    fig = go.Figure(go.Waterfall(
+        x=[k for k, _ in items] + ["Expected return"],
+        y=[v * 100 for _, v in items] + [total * 100],
+        measure=["relative"] * len(items) + ["total"],
+        connector={"line": {"color": "#9AA4B2"}},
+    ))
+    fig.update_layout(title="Expected annual return bridge", template="plotly_dark",
+                      height=380, margin=dict(l=10, r=10, t=40, b=10),
+                      yaxis_title="% per year")
+    return fig
+
+
+def roic_chart(df: pd.DataFrame) -> go.Figure:
+    """Annual ROIC bars."""
+    fig = go.Figure(go.Bar(x=df["Year"], y=df["ROIC"] * 100, name="ROIC",
+                           marker_color="#2DD4A7", opacity=0.85))
+    fig.update_layout(title="Return on invested capital (EBIT×(1−tax) / invested capital)",
+                      template="plotly_dark", height=320,
+                      margin=dict(l=10, r=10, t=40, b=10), yaxis_title="%")
+    return fig
