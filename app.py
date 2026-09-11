@@ -321,15 +321,6 @@ with tabs[2]:
                 f"**CMF(60):** {cmf60_now:+.2f}" if cmf60_now is not None else "" +
                 " — sustained positive = quiet accumulation.")
 
-    st.markdown("### Wyckoff-style structure flags (heuristic)")
-    flags = T.wyckoff_flags(px)
-    if flags:
-        st.table(pd.DataFrame([{"Date": f["date"].date(), "Signal": f["type"],
-                                "Read": f["note"]} for f in flags]))
-    else:
-        st.info("No classic accumulation structures flagged in the last 12 months.")
-    st.caption("Heuristic pattern flags for research — not confirmed Wyckoff analysis.")
-
 # ================= TAB 4 — DISLOCATION =================
 with tabs[3]:
     st.subheader("Estimates vs price — the dislocation tracker")
