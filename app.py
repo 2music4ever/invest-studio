@@ -194,9 +194,24 @@ with tabs[1]:
                                  format="%.0f") * 1e6
     shares = c[3].number_input("Shares out (M)", value=shares0 / 1e6,
                                format="%.0f") * 1e6
+    c = st.columns(4)
+    norm_on = c[0].checkbox("Normalize FCF margin", value=False,
+                            help="Glide from today's FCF margin to a mid-cycle margin over N years — "
+                                 "for companies in a peak-capex phase. The terminal value then reflects "
+                                 "normalized earning power, not today's depressed margin.")
+    norm_m = c[1].number_input("Normalized FCF margin %", value=(fund["fcf_margin"] or 0.15) * 100,
+                              step=0.5, disabled=not norm_on) / 100
+    norm_yrs = int(c[2].number_input("Normalize over (yrs)", value=5, min_value=1, max_value=10,
+                                    step=1, disabled=not norm_on))
+    fcf_norm = norm_m if norm_on else None
+
+    def _mcell(m, mn):
+        s = f"{m * 100:.1f}%"
+        return s + (f" → {mn * 100:.1f}% over {norm_yrs}y" if norm_on else "")
 
     try:
-        iv, ev, sched = V.dcf(revenue, g1, g2, fcf_m, disc, tg, net_debt, shares)
+        iv, ev, sched = V.dcf(revenue, g1, g2, fcf_m, disc, tg, net_debt, shares,
+                              fcf_margin_norm=fcf_norm, norm_years=norm_yrs)
         mos = V.margin_of_safety(iv, price)
         st.session_state["base_iv"] = iv
         g1c, g2c = st.columns([1, 2])
@@ -204,7 +219,9 @@ with tabs[1]:
             st.plotly_chart(charts.mos_gauge(mos, iv, price), width="stretch")
             st.markdown(f"**Verdict:** {V.mos_label(mos)}")
             st.caption(f"Valued with your inputs: revenue **{fmt_big(revenue)}** · FCF margin "
-                       f"**{fcf_m * 100:.1f}%** · growth **{g1 * 100:.1f}% / {g2 * 100:.1f}%** · "
+                       f"**{fcf_m * 100:.1f}%**"
+                       + (f" → **{fcf_norm * 100:.1f}%** normalized over {norm_yrs}y" if norm_on else "")
+                       + f" · growth **{g1 * 100:.1f}% / {g2 * 100:.1f}%** · "
                        f"discount **{disc * 100:.2f}%** · terminal **{tg * 100:.2f}%** · net debt "
                        f"**{fmt_big(net_debt)}** · **{shares / 1e6:,.0f}M** shares → "
                        f"**${iv:,.2f}**/share.")
@@ -212,10 +229,14 @@ with tabs[1]:
             scen = pd.DataFrame([
                 {"Scenario": "Bear", **dict(zip(("IV",),
                     [V.dcf(revenue, max(g1 - 0.05, -0.02), max(g2 - 0.03, 0), max(fcf_m - 0.02, 0.01),
-                               disc + 0.01, tg, net_debt, shares)[0]]))},
+                               disc + 0.01, tg, net_debt, shares,
+                               fcf_margin_norm=(max(fcf_norm - 0.02, 0.01) if norm_on else None),
+                               norm_years=norm_yrs)[0]]))},
                 {"Scenario": "Base", "IV": iv},
                 {"Scenario": "Bull", "IV": V.dcf(revenue, g1 + 0.05, g2 + 0.03, fcf_m + 0.02,
-                                                 max(disc - 0.01, tg + 0.005), tg, net_debt, shares)[0]},
+                                                 max(disc - 0.01, tg + 0.005), tg, net_debt, shares,
+                                                 fcf_margin_norm=(fcf_norm + 0.02 if norm_on else None),
+                                                 norm_years=norm_yrs)[0]},
             ])
             st.plotly_chart(charts.scenario_bars(scen, price), width="stretch")
             with st.expander("Where do bear / base / bull come from?"):
@@ -223,24 +244,26 @@ with tabs[1]:
                     {"Scenario": "Bear",
                      "Growth yrs 1–5": f"{max(g1 - 0.05, -0.02) * 100:.1f}%",
                      "Growth yrs 6–10": f"{max(g2 - 0.03, 0) * 100:.1f}%",
-                     "FCF margin": f"{max(fcf_m - 0.02, 0.01) * 100:.1f}%",
+                     "FCF margin": _mcell(max(fcf_m - 0.02, 0.01),
+                                          max(fcf_norm - 0.02, 0.01) if norm_on else 0),
                      "Discount": f"{(disc + 0.01) * 100:.2f}%"},
                     {"Scenario": "Base — your inputs above",
                      "Growth yrs 1–5": f"{g1 * 100:.1f}%",
                      "Growth yrs 6–10": f"{g2 * 100:.1f}%",
-                     "FCF margin": f"{fcf_m * 100:.1f}%",
+                     "FCF margin": _mcell(fcf_m, fcf_norm if norm_on else 0),
                      "Discount": f"{disc * 100:.2f}%"},
                     {"Scenario": "Bull",
                      "Growth yrs 1–5": f"{(g1 + 0.05) * 100:.1f}%",
                      "Growth yrs 6–10": f"{(g2 + 0.03) * 100:.1f}%",
-                     "FCF margin": f"{(fcf_m + 0.02) * 100:.1f}%",
+                     "FCF margin": _mcell(fcf_m + 0.02, fcf_norm + 0.02 if norm_on else 0),
                      "Discount": f"{max(disc - 0.01, tg + 0.005) * 100:.2f}%"},
                 ]))
                 st.caption("Bear/base/bull are fixed sensitivity offsets around *your* base inputs — "
                            "±5pp growth, ±2pp margin, ±1pp discount rate. Terminal growth and share count stay constant.")
 
         st.markdown("### Reverse DCF — what growth is already priced in?")
-        implied = V.reverse_dcf(price, revenue, fcf_m, disc, tg, net_debt, shares)
+        implied = V.reverse_dcf(price, revenue, fcf_m, disc, tg, net_debt, shares,
+                                  fcf_margin_norm=fcf_norm, norm_years=norm_yrs)
         if implied is None:
             st.info("Current price implies growth outside a sane −5%…+40% range — "
                     "expectations are either euphoric or deeply pessimistic.")
@@ -256,7 +279,7 @@ with tabs[1]:
             for col in ("Revenue", "FCF", "PV of FCF"):
                 show[col] = show[col] / 1e6
             st.dataframe(show.style.format({"Revenue": "{:,.0f}", "FCF": "{:,.0f}",
-                                            "PV of FCF": "{:,.0f}"}),
+                                            "PV of FCF": "{:,.0f}", "FCF margin": "{:.1%}"}),
                          width="stretch")
             st.caption("Figures in $M.")
     except ValueError as e:
