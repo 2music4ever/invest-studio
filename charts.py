@@ -119,15 +119,14 @@ def target_range(lo, mean, hi, price=None):
     pad = span * 0.22
     fig.add_shape(type="line", x0=lo, x1=hi, y0=0, y1=0,
                   line=dict(color="rgba(150,150,150,0.9)", width=12))
-    for x, name, col in ((lo, "Low", "#ff6b6b"), (mean, "Mean", "#ffd43b"),
-                         (hi, "High", "#51cf66")):
+    for x, name in ((lo, "Low"), (mean, "Mean"), (hi, "High")):
         fig.add_trace(go.Scatter(x=[x], y=[0], mode="markers", showlegend=False,
                                  hovertemplate=f"{name}: $%{{x:,.0f}}<extra></extra>",
-                                 marker=dict(size=15, color=col,
+                                 marker=dict(size=15, color="#4C8DFF",
                                              line=dict(color="black", width=1))))
         fig.add_annotation(x=x, y=0, text=f"<b>{name}</b><br>${x:,.0f}",
                            showarrow=False, yshift=-42,
-                           font=dict(size=13, color=col), align="center")
+                           font=dict(size=13, color="white"), align="center")
     if price:
         fig.add_vline(x=price, line_dash="dash", line_color="white", opacity=0.85)
         fig.add_annotation(x=price, y=0, text=f"<b>Now</b><br>${price:,.0f}",

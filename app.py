@@ -239,11 +239,10 @@ with tabs[3]:
     an = D.get_analyst(ticker)
     tgt = an.get("analyst_price_targets")
     if isinstance(tgt, dict) and tgt.get("mean"):
-        c1, c2, c3 = st.columns(3)
+        c1, c2 = st.columns(2)
         c1.metric("Consensus target", fmt_money(tgt.get("mean")),
                   f"{(tgt['mean'] / price - 1) * 100:+.1f}% vs price" if price else None)
-        c2.metric("Target range", f"{fmt_money(tgt.get('low'))} – {fmt_money(tgt.get('high'))}")
-        c3.metric("Analysts", tgt.get("numberOfAnalysts") or "n/a")
+        c2.metric("Analysts", tgt.get("numberOfAnalysts") or "n/a")
         if tgt.get("low") and tgt.get("high"):
             st.plotly_chart(charts.target_range(tgt["low"], tgt["mean"],
                                                 tgt["high"], price),

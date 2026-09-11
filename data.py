@@ -82,6 +82,12 @@ def get_snapshot(ticker: str) -> dict:
         return None
 
     price = pick("currentPrice", "regularMarketPrice") or fast.get("lastPrice")
+    # Yahoo quirk: trailingAnnualDividendYield is a ratio (0.0074), but
+    # dividendYield comes back in percent units (0.74 = 0.74%).
+    div_yield = pick("trailingAnnualDividendYield")
+    if div_yield is None:
+        raw_dy = pick("dividendYield")
+        div_yield = raw_dy / 100 if raw_dy else None
     # fast_info is a separate endpoint — it often survives when t.info is throttled
     shares = pick("sharesOutstanding") or fast.get("shares")
     market_cap = pick("marketCap") or fast.get("marketCap")
@@ -105,7 +111,7 @@ def get_snapshot(ticker: str) -> dict:
         "total_debt": pick("totalDebt"),
         "total_cash": pick("totalCash"),
         "beta": pick("beta"),
-        "div_yield": pick("dividendYield"),
+        "div_yield": div_yield,
         "payout": pick("payoutRatio"),
         "target_mean": pick("targetMeanPrice"),
         "target_high": pick("targetHighPrice"),
