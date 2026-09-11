@@ -34,7 +34,6 @@ def fmt_pct(x, digits=1):
 # ---------- sidebar ----------
 ticker = st.sidebar.text_input("Ticker", "MSFT").strip().upper()
 period = "10y"  # single source of truth; chart zoom is controlled by the range pills
-log_scale = st.sidebar.checkbox("Log price scale", True)
 st.sidebar.caption("Data: Yahoo Finance (free). Estimates update intraday; fundamentals quarterly.")
 
 if not ticker:
@@ -80,8 +79,7 @@ with tabs[0]:
     else:
         cdf = px.iloc[-_days[rng]:]
     flags = [f for f in T.wyckoff_flags(px) if f["date"] >= cdf.index[0]]
-    st.plotly_chart(charts.price_chart(cdf, log=log_scale, flags=flags),
-                    width="stretch")
+    st.plotly_chart(charts.price_chart(cdf, flags=flags), width="stretch")
 
     st.markdown("### Historical valuation bands")
     pe = D.get_ttm_pe(ticker, px["Close"])

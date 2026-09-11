@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -> go.Figure:
+def price_chart(df: pd.DataFrame, flags: list | None = None) -> go.Figure:
     d = df  # caller controls the visible window via the range pills
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25],
                         vertical_spacing=0.03)
@@ -22,8 +22,6 @@ def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -
         top = float(d["Close"].max())
         for i, f in enumerate(flags[-6:]):
             col = fcolors.get(f["type"], "#9AA4B2")
-            fig.add_vline(x=f["date"], line_dash="dot", line_color=col,
-                          opacity=0.35, row=1, col=1)
             fig.add_annotation(x=f["date"], y=top, xref="x", yref="y",
                                text=f"<b>{f['type']}</b>", showarrow=False,
                                yshift=-16 - 28 * (i % 3),
@@ -35,8 +33,6 @@ def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -
     fig.update_layout(height=560, margin=dict(l=10, r=10, t=30, b=10),
                       legend=dict(orientation="h", y=1.02),
                       template="plotly_dark")
-    if log:
-        fig.update_yaxes(type="log", row=1, col=1)
     fig.update_xaxes(rangeslider_visible=False)
     return fig
 
