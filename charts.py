@@ -41,7 +41,7 @@ def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -
     return fig
 
 
-def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
+def valuation_bands(pe: pd.DataFrame, forward_pe: float | None = None) -> go.Figure | None:
     if pe.empty or len(pe) < 10:
         return None
     p = pe.copy()
@@ -59,6 +59,10 @@ def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
     fig.add_trace(go.Scatter(x=p.index, y=p["p10"], fill="tonexty",
                              fillcolor="rgba(45,212,167,0.10)",
                              line=dict(width=0), showlegend=False, hoverinfo="skip"))
+    if forward_pe:
+        fig.add_hline(y=forward_pe, line_dash="dash", line_color="#FFB020", line_width=1.4,
+                      annotation_text=f"Forward P/E {forward_pe:.1f} (current)",
+                      annotation_font_color="#FFB020")
     fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10),
                       title="Historical P/E with percentile bands — dips under the 10th percentile are the valuation zone",
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))

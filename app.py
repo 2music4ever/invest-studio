@@ -85,15 +85,20 @@ with tabs[0]:
 
     st.markdown("### Historical valuation bands")
     pe = D.get_ttm_pe(ticker, px["Close"])
-    fig = charts.valuation_bands(pe)
+    fwd_pe = snap.get("forward_pe")
+    fig = charts.valuation_bands(pe, forward_pe=fwd_pe)
     if fig:
         st.plotly_chart(fig, width="stretch")
         cur_pe = pe["pe"].iloc[-1]
-        st.caption(f"Current P/E **{cur_pe:.1f}** vs 10th percentile "
-                   f"**{pe['pe'].quantile(0.1):.1f}** and median "
-                   f"**{pe['pe'].quantile(0.5):.1f}**. "
-                   "Built from annual EPS (yearly points) plus recent TTM EPS (weekly) — "
-                   "a coarse but honest read of where the multiple sits in its own history.")
+        cap = (f"Trailing P/E **{cur_pe:.1f}** vs 10th percentile "
+               f"**{pe['pe'].quantile(0.1):.1f}** and median "
+               f"**{pe['pe'].quantile(0.5):.1f}**. ")
+        if fwd_pe:
+            cap += (f"Orange line: forward P/E **{fwd_pe:.1f}** (Yahoo, current) — where the "
+                    "market prices next-12-month earnings vs the trailing history. ")
+        cap += ("Bands are trailing only: free data has no historical forward-estimate series. "
+                "Built from annual EPS (yearly points) plus recent TTM EPS (weekly).")
+        st.caption(cap)
     else:
         st.info("Not enough quarterly history to build P/E bands for this ticker.")
 
@@ -148,6 +153,11 @@ with tabs[1]:
         with g1c:
             st.plotly_chart(charts.mos_gauge(mos, iv, price), width="stretch")
             st.markdown(f"**Verdict:** {V.mos_label(mos)}")
+            st.caption(f"Valued with your inputs: revenue **{fmt_big(revenue)}** · FCF margin "
+                       f"**{fcf_m * 100:.1f}%** · growth **{g1 * 100:.1f}% / {g2 * 100:.1f}%** · "
+                       f"discount **{disc * 100:.2f}%** · terminal **{tg * 100:.2f}%** · net debt "
+                       f"**{fmt_big(net_debt)}** · **{shares / 1e6:,.0f}M** shares → "
+                       f"**${iv:,.2f}**/share.")
         with g2c:
             scen = pd.DataFrame([
                 {"Scenario": "Bear", **dict(zip(("IV",),
