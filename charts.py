@@ -6,7 +6,7 @@ from plotly.subplots import make_subplots
 
 
 def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -> go.Figure:
-    d = df.iloc[-750:]  # ~3y daily keeps it readable
+    d = df  # caller controls the visible window via the range pills
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25],
                         vertical_spacing=0.03)
     fig.add_trace(go.Scatter(x=d.index, y=d["Close"], name="Price",

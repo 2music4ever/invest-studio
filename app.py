@@ -33,7 +33,7 @@ def fmt_pct(x, digits=1):
 
 # ---------- sidebar ----------
 ticker = st.sidebar.text_input("Ticker", "MSFT").strip().upper()
-period = st.sidebar.selectbox("History", ["5y", "10y", "max"], index=1)
+period = "10y"  # single source of truth; chart zoom is controlled by the range pills
 log_scale = st.sidebar.checkbox("Log price scale", True)
 st.sidebar.caption("Data: Yahoo Finance (free). Estimates update intraday; fundamentals quarterly.")
 
@@ -68,11 +68,11 @@ with tabs[0]:
     c4.metric("Forward P/E", f"{snap['forward_pe']:.1f}" if snap["forward_pe"] else "n/a")
     c5.metric("PEG", f"{snap['peg']:.2f}" if snap["peg"] else "n/a")
     st.markdown(f"**Trend regime:** :{regime_color}[{regime_text}]")
-    rng = st.pills("Chart range", ["3M", "6M", "YTD", "1Y", "3Y", "5Y", "10Y", "Max"],
-                   default="Max", key="chart_rng")
+    rng = st.pills("Chart range", ["3M", "6M", "YTD", "1Y", "3Y", "5Y", "10Y"],
+                   default="10Y", key="chart_rng")
     _days = {"3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520}
     naive_idx = px.index.tz_localize(None)
-    if rng in (None, "Max"):
+    if rng in (None, "10Y"):
         cdf = px
     elif rng == "YTD":
         start = pd.Timestamp(year=naive_idx[-1].year, month=1, day=1)
@@ -82,6 +82,8 @@ with tabs[0]:
     flags = [f for f in T.wyckoff_flags(px) if f["date"] >= cdf.index[0]]
     st.plotly_chart(charts.price_chart(cdf, log=log_scale, flags=flags),
                     width="stretch")
+    st.caption("Dashed lines are the **50- and 200-week moving averages** — the long-term trend "
+               "filter. They move slowly, so on short zooms they look like diagonals.")
 
     st.markdown("### Historical valuation bands")
     pe = D.get_ttm_pe(ticker, px["Close"])
