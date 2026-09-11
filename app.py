@@ -69,7 +69,7 @@ with tabs[0]:
     c5.metric("PEG", f"{snap['peg']:.2f}" if snap["peg"] else "n/a")
     st.markdown(f"**Trend regime:** :{regime_color}[{regime_text}]")
     rng = st.pills("Chart range", ["3M", "6M", "YTD", "1Y", "3Y", "5Y", "10Y"],
-                   default="10Y", key="chart_rng")
+                   default="3Y", key="chart_rng")
     _days = {"3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520}
     naive_idx = px.index.tz_localize(None)
     if rng in (None, "10Y"):
@@ -83,7 +83,9 @@ with tabs[0]:
     st.plotly_chart(charts.price_chart(cdf, log=log_scale, flags=flags),
                     width="stretch")
     st.caption("Dashed lines are the **50- and 200-week moving averages** — the long-term trend "
-               "filter. They move slowly, so on short zooms they look like diagonals.")
+               "filter. They move slowly, so on short zooms they look like diagonals. "
+               "**Dotted vertical lines** mark Wyckoff-style signal dates (spring / breakout / test) "
+               "from the Accumulation tab.")
 
     st.markdown("### Historical valuation bands")
     pe = D.get_ttm_pe(ticker, px["Close"])

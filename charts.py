@@ -20,10 +20,10 @@ def price_chart(df: pd.DataFrame, log: bool = True, flags: list | None = None) -
     if flags:
         fcolors = {"Spring?": "#FFB020", "Breakout": "#2DD4A7", "Test?": "#4C8DFF"}
         top = float(d["Close"].max())
-        for i, f in enumerate(flags[-8:]):
+        for i, f in enumerate(flags[-6:]):
             col = fcolors.get(f["type"], "#9AA4B2")
             fig.add_vline(x=f["date"], line_dash="dot", line_color=col,
-                          opacity=0.55, row=1, col=1)
+                          opacity=0.35, row=1, col=1)
             fig.add_annotation(x=f["date"], y=top, xref="x", yref="y",
                                text=f"<b>{f['type']}</b>", showarrow=False,
                                yshift=-16 - 28 * (i % 3),
