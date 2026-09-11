@@ -303,7 +303,7 @@ with tabs[1]:
         pe_now = snap.get("trailing_pe")
         pe_med = float(pe_hist["pe"].median()) if not pe_hist.empty else None
         bc = st.columns(5)
-        div_d = bc[0].number_input("Dividend yield %", value=(snap.get("div_yield") or 0) * 100,
+        div_d = bc[0].number_input("Dividend yield %", value=float((snap.get("div_yield") or 0) * 100),
                                   step=0.05) / 100
         bb_d = bc[1].number_input("Buyback yield %", value=bb["yield"] * 100, step=0.05) / 100
         g_d = bc[2].number_input("Earnings growth %", value=g1 * 100, step=0.5) / 100
@@ -352,7 +352,7 @@ with tabs[1]:
         gc = D.get_consensus_growth(ticker)
         v1 = st.columns(4)
         rev0 = v1[0].number_input("VC current revenue ($M)",
-                                 value=fund["rev"] / 1e6 if fund.get("rev") else 0.0,
+                                 value=fund["revenue"] / 1e6 if fund.get("revenue") else 0.0,
                                  step=10.0, format="%.1f")
         gvc = v1[1].number_input("VC revenue CAGR %", value=gc["g_early"] * 100, step=5.0) / 100
         nvc = int(v1[2].number_input("VC horizon (yrs)", value=5, min_value=1, max_value=15, step=1))
