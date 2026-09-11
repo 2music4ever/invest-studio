@@ -124,8 +124,9 @@ with tabs[0]:
         pxc = px["Close"]
         pidx = pxc.index.tz_localize(None) if getattr(pxc.index, "tz", None) is not None else pxc.index
         pxc = pd.Series(pxc.to_numpy(), index=pidx).sort_index()
-        fh["price"] = [float(pxc.loc[:d].iloc[-1]) if not pxc.loc[:d].empty else np.nan
-                       for d in fh.index]
+        fh["price"] = [float(pxc.iloc[-1]) if k == "TTM"
+                       else (float(pxc.loc[:d].iloc[-1]) if not pxc.loc[:d].empty else np.nan)
+                       for d, k in zip(fh.index, fh["kind"])]
         for m, num in (("gross_m", "gross"), ("op_m", "opinc"),
                        ("net_m", "netinc"), ("fcf_m", "fcf")):
             fh[m] = fh[num] / fh["revenue"]
@@ -152,7 +153,7 @@ with tabs[0]:
             fh, akey, None if bkey == "none" else bkey, FMETS), width="stretch")
         st.caption("Annual fiscal statements plus a current TTM point — the full history "
                    "Yahoo's free tier carries (about 4 years). Margins are period ratios; "
-                   "price is the period-end close.")
+                   "price is the period-end close (TTM pairs with the latest close).")
 
 # ================= TAB 2 — VALUATION LAB =================
 with tabs[1]:
