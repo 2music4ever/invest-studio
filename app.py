@@ -188,8 +188,9 @@ with tabs[1]:
     disc = c[2].number_input("Discount rate %", value=9.0, step=0.25) / 100
     tg = c[3].number_input("Terminal growth %", value=2.5, step=0.25) / 100
     c = st.columns(4)
-    g1 = c[0].number_input("Revenue growth yrs 1–5 %", value=12.0, step=0.5) / 100
-    g2 = c[1].number_input("Revenue growth yrs 6–10 %", value=5.0, step=0.5) / 100
+    cons = D.get_consensus_growth(ticker)
+    g1 = c[0].number_input("Revenue growth yrs 1–5 %", value=cons["g_early"] * 100, step=0.5) / 100
+    g2 = c[1].number_input("Revenue growth yrs 6–10 %", value=cons["g_late"] * 100, step=0.5) / 100
     net_debt = c[2].number_input("Net debt ($M)", value=(fund["net_debt"] or 0) / 1e6,
                                  format="%.0f") * 1e6
     shares = c[3].number_input("Shares out (M)", value=shares0 / 1e6,
@@ -204,6 +205,14 @@ with tabs[1]:
     norm_yrs = int(c[2].number_input("Normalize over (yrs)", value=5, min_value=1, max_value=10,
                                     step=1, disabled=not norm_on))
     fcf_norm = norm_m if norm_on else None
+
+    if cons["early_src"] == "consensus" or cons["late_src"] == "consensus":
+        bits = []
+        if cons["early_src"] == "consensus":
+            bits.append(f"yrs 1–5: **{cons['g_early'] * 100:.0f}%** (+1y consensus revenue growth)")
+        if cons["late_src"] == "consensus":
+            bits.append(f"yrs 6–10: **{cons['g_late'] * 100:.1f}%** (consensus long-term growth)")
+        st.caption("Growth prefilled from Yahoo consensus — " + ", ".join(bits) + ". Still fully editable.")
 
     def _mcell(m, mn):
         s = f"{m * 100:.1f}%"

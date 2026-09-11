@@ -188,6 +188,36 @@ def get_fundamentals(ticker: str) -> dict:
 
 
 @st.cache_data(ttl=86400, show_spinner=False)
+def get_consensus_growth(ticker: str) -> dict:
+    """Prefill DCF growth from Yahoo consensus: next-year revenue growth for yrs 1-5,
+    long-term growth rate for yrs 6-10. Falls back to 12%/5% when unavailable."""
+    out = {"g_early": 0.12, "g_late": 0.05, "early_src": "default", "late_src": "default"}
+    t = yf.Ticker(ticker)
+    try:
+        re_ = _with_retry(lambda: t.revenue_estimate, tries=2)
+        if re_ is not None and not re_.empty and "avg" in re_.columns:
+            avg = re_["avg"]
+            r0 = avg.loc["0y"] if "0y" in avg.index else None
+            r1 = avg.loc["+1y"] if "+1y" in avg.index else None
+            if r0 and r1 and r0 > 0 and np.isfinite(r1 / r0):
+                out["g_early"] = float(r1 / r0 - 1)
+                out["early_src"] = "consensus"
+    except Exception:
+        pass
+    try:
+        ge = _with_retry(lambda: t.growth_estimates, tries=2)
+        if ge is not None and not ge.empty and "stockTrend" in ge.columns:
+            st_ = ge["stockTrend"]
+            ltg = st_.loc["LTG"] if "LTG" in st_.index else None
+            if ltg is not None and np.isfinite(ltg):
+                out["g_late"] = float(ltg)
+                out["late_src"] = "consensus"
+    except Exception:
+        pass
+    return out
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
 def get_ttm_pe(ticker: str, price: pd.Series) -> pd.DataFrame:
     """Historical P/E: weekly TTM P/E for the recent year (quarterly
     statements) plus annual P/E points for earlier years. Approximation."""
