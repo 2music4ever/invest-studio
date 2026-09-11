@@ -2,7 +2,11 @@
 
 All network calls are cached. Every accessor degrades gracefully to
 None/empty so the UI can explain what is missing instead of crashing.
+Yahoo rate-limits aggressively from shared cloud IPs, so reads retry.
 """
+import random
+import time
+
 import pandas as pd
 import streamlit as st
 import yfinance as yf
@@ -20,6 +24,18 @@ SECTOR_ETF = {
     "Real Estate": "XLRE",
     "Communication Services": "XLC",
 }
+
+
+def _with_retry(fn, tries=3, base_delay=2.0):
+    """Retry a Yahoo call; cloud IPs get rate-limited often."""
+    last = None
+    for i in range(tries):
+        try:
+            return fn()
+        except Exception as e:
+            last = e
+            time.sleep(base_delay * (i + 1) + random.random())
+    raise last
 
 
 def _flatten(df: pd.DataFrame) -> pd.DataFrame:
@@ -51,10 +67,9 @@ def get_snapshot(ticker: str) -> dict:
     """Key stats; missing fields come back as None."""
     t = yf.Ticker(ticker)
     try:
-        info = t.info or {}
+        info = _with_retry(lambda: t.info or {}, tries=3)
     except Exception:
         info = {}
-    fast = {}
     try:
         fast = dict(t.fast_info) if hasattr(t, "fast_info") else {}
     except Exception:
@@ -67,13 +82,16 @@ def get_snapshot(ticker: str) -> dict:
         return None
 
     price = pick("currentPrice", "regularMarketPrice") or fast.get("lastPrice")
+    # fast_info is a separate endpoint — it often survives when t.info is throttled
+    shares = pick("sharesOutstanding") or fast.get("shares")
+    market_cap = pick("marketCap") or fast.get("marketCap")
     return {
         "price": price,
         "name": pick("longName", "shortName") or ticker,
         "sector": pick("sector"),
         "industry": pick("industry"),
-        "market_cap": pick("marketCap"),
-        "shares": pick("sharesOutstanding"),
+        "market_cap": market_cap,
+        "shares": shares,
         "trailing_pe": pick("trailingPE"),
         "forward_pe": pick("forwardPE"),
         "peg": pick("pegRatio", "trailingPegRatio"),
@@ -116,7 +134,7 @@ def get_annuals(ticker: str) -> dict:
     out = {}
     for attr in ("financials", "cashflow", "balance_sheet"):
         try:
-            out[attr] = _flatten(getattr(t, attr).copy())
+            out[attr] = _flatten(_with_retry(lambda a=attr: getattr(t, a).copy(), tries=2))
         except Exception:
             out[attr] = pd.DataFrame()
     return out
@@ -233,7 +251,7 @@ def get_analyst(ticker: str) -> dict:
     for attr in ("analyst_price_targets", "eps_trend", "eps_revisions",
                  "growth_estimates", "recommendation_trend"):
         try:
-            v = getattr(t, attr)
+            v = _with_retry(lambda a=attr: getattr(t, a), tries=2)
             out[attr] = v
         except Exception:
             out[attr] = None

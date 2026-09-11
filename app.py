@@ -68,8 +68,19 @@ with tabs[0]:
     c4.metric("Forward P/E", f"{snap['forward_pe']:.1f}" if snap["forward_pe"] else "n/a")
     c5.metric("PEG", f"{snap['peg']:.2f}" if snap["peg"] else "n/a")
     st.markdown(f"**Trend regime:** :{regime_color}[{regime_text}]")
-    st.plotly_chart(charts.price_chart(px, log=log_scale,
-                                       flags=T.wyckoff_flags(px)),
+    rng = st.pills("Chart range", ["3M", "6M", "YTD", "1Y", "3Y", "5Y", "10Y", "Max"],
+                   default="Max", key="chart_rng")
+    _days = {"3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520}
+    naive_idx = px.index.tz_localize(None)
+    if rng in (None, "Max"):
+        cdf = px
+    elif rng == "YTD":
+        start = pd.Timestamp(year=naive_idx[-1].year, month=1, day=1)
+        cdf = px[naive_idx >= start]
+    else:
+        cdf = px.iloc[-_days[rng]:]
+    flags = [f for f in T.wyckoff_flags(px) if f["date"] >= cdf.index[0]]
+    st.plotly_chart(charts.price_chart(cdf, log=log_scale, flags=flags),
                     width="stretch")
 
     st.markdown("### Historical valuation bands")
@@ -103,9 +114,18 @@ with tabs[0]:
 with tabs[1]:
     st.subheader("DCF valuation — your assumptions drive the value")
     rev0 = fund["revenue"]
-    if not rev0:
-        st.warning("Revenue data unavailable for this ticker — enter assumptions manually.")
-        rev0 = 1e9
+    shares0 = fund["shares"]
+    if not rev0 or not shares0:
+        st.error("Yahoo didn't return revenue or shares outstanding — it's likely "
+                 "rate-limiting right now. Your assumptions can't be valued without them, "
+                 "so nothing below is computed on bad data.")
+        if st.button("🔄 Retry loading data", key="retry_fund"):
+            st.cache_data.clear()
+            st.rerun()
+        st.stop()
+    st.caption(f"Loaded from Yahoo: revenue **{fmt_big(rev0)}** · **{shares0 / 1e9:.2f}B** shares · "
+               f"net debt **{fmt_big(fund['net_debt'])}** · FCF margin "
+               f"**{fmt_pct(fund['fcf_margin'])}**. Every number below is editable — the value is yours.")
     c = st.columns(4)
     revenue = c[0].number_input("Revenue (TTM, $M)", value=rev0 / 1e6, format="%.0f") * 1e6
     fcf_m = c[1].number_input("FCF margin %", value=(fund["fcf_margin"] or 0.15) * 100,
@@ -117,7 +137,7 @@ with tabs[1]:
     g2 = c[1].number_input("Revenue growth yrs 6–10 %", value=5.0, step=0.5) / 100
     net_debt = c[2].number_input("Net debt ($M)", value=(fund["net_debt"] or 0) / 1e6,
                                  format="%.0f") * 1e6
-    shares = c[3].number_input("Shares out (M)", value=(fund["shares"] or 1e9) / 1e6,
+    shares = c[3].number_input("Shares out (M)", value=shares0 / 1e6,
                                format="%.0f") * 1e6
 
     try:
@@ -138,6 +158,26 @@ with tabs[1]:
                                                  max(disc - 0.01, tg + 0.005), tg, net_debt, shares)[0]},
             ])
             st.plotly_chart(charts.scenario_bars(scen, price), width="stretch")
+            with st.expander("Where do bear / base / bull come from?"):
+                st.table(pd.DataFrame([
+                    {"Scenario": "Bear",
+                     "Growth yrs 1–5": f"{max(g1 - 0.05, -0.02) * 100:.1f}%",
+                     "Growth yrs 6–10": f"{max(g2 - 0.03, 0) * 100:.1f}%",
+                     "FCF margin": f"{max(fcf_m - 0.02, 0.01) * 100:.1f}%",
+                     "Discount": f"{(disc + 0.01) * 100:.2f}%"},
+                    {"Scenario": "Base — your inputs above",
+                     "Growth yrs 1–5": f"{g1 * 100:.1f}%",
+                     "Growth yrs 6–10": f"{g2 * 100:.1f}%",
+                     "FCF margin": f"{fcf_m * 100:.1f}%",
+                     "Discount": f"{disc * 100:.2f}%"},
+                    {"Scenario": "Bull",
+                     "Growth yrs 1–5": f"{(g1 + 0.05) * 100:.1f}%",
+                     "Growth yrs 6–10": f"{(g2 + 0.03) * 100:.1f}%",
+                     "FCF margin": f"{(fcf_m + 0.02) * 100:.1f}%",
+                     "Discount": f"{max(disc - 0.01, tg + 0.005) * 100:.2f}%"},
+                ]))
+                st.caption("Bear/base/bull are fixed sensitivity offsets around *your* base inputs — "
+                           "±5pp growth, ±2pp margin, ±1pp discount rate. Terminal growth and share count stay constant.")
 
         st.markdown("### Reverse DCF — what growth is already priced in?")
         implied = V.reverse_dcf(price, revenue, fcf_m, disc, tg, net_debt, shares)
@@ -205,7 +245,12 @@ with tabs[3]:
         c2.metric("Target range", f"{fmt_money(tgt.get('low'))} – {fmt_money(tgt.get('high'))}")
         c3.metric("Analysts", tgt.get("numberOfAnalysts") or "n/a")
     else:
-        st.info("No analyst price targets available for this ticker.")
+        st.info("No analyst price targets available for this ticker right now — "
+                "Yahoo may be rate-limiting. (Google Finance blocks automated access, "
+                "so the app can't pull its Analysis tab directly.)")
+        if st.button("🔄 Retry analyst data", key="retry_an"):
+            st.cache_data.clear()
+            st.rerun()
 
     et = an.get("eps_trend")
     er = an.get("eps_revisions")
