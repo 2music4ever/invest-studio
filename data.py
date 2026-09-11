@@ -7,6 +7,7 @@ Yahoo rate-limits aggressively from shared cloud IPs, so reads retry.
 import random
 import time
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 import yfinance as yf
@@ -247,6 +248,65 @@ def get_ttm_pe(ticker: str, price: pd.Series) -> pd.DataFrame:
         return pd.DataFrame()
     out = pd.DataFrame(points, columns=["date", "pe"]).drop_duplicates("date").set_index("date")
     return out.sort_index()[["pe"]]
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_fundamentals_history(ticker: str) -> pd.DataFrame:
+    """Annual income/cash-flow history plus a current TTM point.
+
+    Index: period-end dates. Columns: revenue, gross, opinc, netinc, fcf, eps
+    (diluted), kind ('FY' or 'TTM'). Yahoo's free tier only carries ~4 annuals
+    and ~5 quarters, so this is short — but it's the full history available.
+    """
+    t = yf.Ticker(ticker)
+
+    def val(s, dt):
+        if s is None:
+            return np.nan
+        try:
+            return float(s.get(dt, np.nan))
+        except (TypeError, ValueError):
+            return np.nan
+
+    recs = []
+    try:
+        ann = _flatten(t.financials.copy())
+        acf = _flatten(t.cashflow.copy())
+    except Exception:
+        ann, acf = pd.DataFrame(), pd.DataFrame()
+    if not ann.empty:
+        rev, gro = _row(ann, "total revenue"), _row(ann, "gross profit")
+        opi, net = _row(ann, "operating income"), _row(ann, "net income")
+        eps, fcf = _row(ann, "diluted eps"), _row(acf, "free cash flow")
+        for dt in sorted(ann.columns):
+            recs.append({"date": pd.Timestamp(dt).tz_localize(None), "kind": "FY",
+                         "revenue": val(rev, dt), "gross": val(gro, dt),
+                         "opinc": val(opi, dt), "netinc": val(net, dt),
+                         "fcf": val(fcf, dt), "eps": val(eps, dt)})
+    try:
+        q = _flatten(t.quarterly_financials.copy())
+        qcf = _flatten(t.quarterly_cashflow.copy())
+    except Exception:
+        q, qcf = pd.DataFrame(), pd.DataFrame()
+    if not q.empty and len(q.columns) >= 4:
+        cols = list(q.columns[:4])
+
+        def qsum(s):
+            vals = [val(s, c) for c in cols]
+            return float(np.nansum(vals)) if not all(np.isnan(v) for v in vals) else np.nan
+
+        recs.append({"date": pd.Timestamp(cols[0]).tz_localize(None), "kind": "TTM",
+                     "revenue": qsum(_row(q, "total revenue")),
+                     "gross": qsum(_row(q, "gross profit")),
+                     "opinc": qsum(_row(q, "operating income")),
+                     "netinc": qsum(_row(q, "net income")),
+                     "fcf": qsum(_row(qcf, "free cash flow")),
+                     "eps": qsum(_row(q, "diluted eps"))})
+    if not recs:
+        return pd.DataFrame()
+    df = pd.DataFrame(recs).set_index("date").sort_index()
+    # TTM can coincide with the latest fiscal year-end — prefer the TTM row
+    return df[~df.index.duplicated(keep="last")]
 
 
 @st.cache_data(ttl=3600, show_spinner=False)

@@ -115,6 +115,45 @@ with tabs[0]:
                 ("Free cash flow (TTM)", fmt_big(snap["fcf"]))]
         st.table(pd.DataFrame(rows, columns=["Metric", "Value"]))
 
+    st.markdown("### Fundamental trends")
+    fh = D.get_fundamentals_history(ticker)
+    if fh.empty or len(fh) < 2:
+        st.info("Not enough statement history to chart fundamentals for this ticker.")
+    else:
+        fh = fh.copy()
+        pxc = px["Close"]
+        pidx = pxc.index.tz_localize(None) if getattr(pxc.index, "tz", None) is not None else pxc.index
+        pxc = pd.Series(pxc.to_numpy(), index=pidx).sort_index()
+        fh["price"] = [float(pxc.loc[:d].iloc[-1]) if not pxc.loc[:d].empty else np.nan
+                       for d in fh.index]
+        for m, num in (("gross_m", "gross"), ("op_m", "opinc"),
+                       ("net_m", "netinc"), ("fcf_m", "fcf")):
+            fh[m] = fh[num] / fh["revenue"]
+        fh["label"] = ["TTM" if k == "TTM" else str(d.year)
+                       for d, k in zip(fh.index, fh["kind"])]
+        FMETS = {"revenue": ("Revenue", "$B"), "gross": ("Gross profit", "$B"),
+                 "opinc": ("Operating income", "$B"), "netinc": ("Net income", "$B"),
+                 "fcf": ("Free cash flow", "$B"), "eps": ("Diluted EPS", "$"),
+                 "gross_m": ("Gross margin", "%"), "op_m": ("Operating margin", "%"),
+                 "net_m": ("Net margin", "%"), "fcf_m": ("FCF margin", "%"),
+                 "price": ("Stock price (period-end)", "$")}
+        avail = [k for k in FMETS if fh[k].notna().sum() >= 2]
+        mc = st.columns(2)
+        akey = mc[0].selectbox("Metric — bars, left axis", avail,
+                               format_func=lambda k: FMETS[k][0],
+                               index=avail.index("revenue") if "revenue" in avail else 0,
+                               key="fm_a")
+        bopts = ["none"] + avail
+        bkey = mc[1].selectbox("Compare with — line, right axis", bopts,
+                               format_func=lambda k: "None" if k == "none" else FMETS[k][0],
+                               index=bopts.index("price") if "price" in avail else 0,
+                               key="fm_b")
+        st.plotly_chart(charts.fundamentals_chart(
+            fh, akey, None if bkey == "none" else bkey, FMETS), width="stretch")
+        st.caption("Annual fiscal statements plus a current TTM point — the full history "
+                   "Yahoo's free tier carries (about 4 years). Margins are period ratios; "
+                   "price is the period-end close.")
+
 # ================= TAB 2 — VALUATION LAB =================
 with tabs[1]:
     st.subheader("DCF valuation — your assumptions drive the value")

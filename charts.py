@@ -69,6 +69,36 @@ def valuation_bands(pe: pd.DataFrame, forward_pe: float | None = None) -> go.Fig
     return fig
 
 
+def fundamentals_chart(df: pd.DataFrame, a: str, b: str | None, meta: dict) -> go.Figure:
+    """Dual-axis fundamental chart: `a` as bars (left axis), optional `b` as a
+    line (right axis). meta[key] = (label, unit) with unit in {'$B', '$', '%'}."""
+    def scaled(key):
+        label, unit = meta[key]
+        s = df[key] / 1e9 if unit == "$B" else df[key]
+        fmt = ".0%" if unit == "%" else (".1f" if unit == "$B" else ",.0f")
+        title = label if unit == "%" else f"{label} ({unit})"
+        return s, fmt, title, label
+
+    ya, yfmt, ytitle, la = scaled(a)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=df["label"], y=ya, name=la, marker_color="#4C8DFF",
+                         opacity=0.8, yaxis="y"))
+    layout = dict(height=400, margin=dict(l=10, r=10, t=40, b=10), template="plotly_dark",
+                  legend=dict(orientation="h", y=1.02),
+                  yaxis=dict(title=ytitle, tickformat=yfmt))
+    if b:
+        yb, ybfmt, ybtitle, lb = scaled(b)
+        fig.add_trace(go.Scatter(x=df["label"], y=yb, name=lb, mode="lines+markers",
+                                 line=dict(color="#FFB020", width=2.5), yaxis="y2"))
+        layout["yaxis2"] = dict(title=ybtitle, tickformat=ybfmt, overlaying="y",
+                                side="right", showgrid=False)
+        layout["title"] = f"{la} vs {lb} — fiscal periods"
+    else:
+        layout["title"] = f"{la} — fiscal periods"
+    fig.update_layout(**layout)
+    return fig
+
+
 def vpvr_chart(prof: pd.DataFrame, price_now: float) -> go.Figure:
     fig = go.Figure()
     colors = ["#FFB020" if abs(p - prof["poc"].iloc[0]) < (prof["price"].max() - prof["price"].min()) / 72
