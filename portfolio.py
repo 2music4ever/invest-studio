@@ -170,3 +170,28 @@ def stats(w, rets, mar=0.0):
 def growth(w, rets, start=10000.0):
     rp = rets.to_numpy(dtype=float) @ np.asarray(w, dtype=float)
     return pd.Series(start * np.cumprod(1.0 + rp), index=rets.index)
+
+
+def parse_weights(raw, n):
+    """Parse comma-separated percentages into an n-vector.
+
+    Returns (w, note) on success, (None, error_msg) on failure,
+    (None, None) when the input is blank.
+    """
+    if not raw or not str(raw).strip():
+        return None, None
+    parts = [p.strip().rstrip("%") for p in str(raw).split(",")]
+    try:
+        vals = [float(p) for p in parts]
+    except ValueError:
+        return None, "Could not parse current allocation — use numbers separated by commas."
+    if len(vals) != n:
+        return None, f"Current allocation has {len(vals)} numbers but there are {n} tickers."
+    if any(v < 0 for v in vals):
+        return None, "Current allocation weights must be non-negative."
+    s = sum(vals)
+    if s <= 0:
+        return None, "Current allocation weights sum to zero."
+    w = np.array(vals, dtype=float) / s
+    note = None if abs(s - 100.0) < 1e-6 else f"Weights normalized to 100% (entered {s:g}%)."
+    return w, note

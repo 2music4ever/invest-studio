@@ -692,7 +692,7 @@ _For education and research only — not investment advice._
 # ================= TAB 6 — PORTFOLIO =================
 with tabs[5]:
     st.subheader("Portfolio optimization")
-    st.caption("Mean-variance, max Sortino, and min max-drawdown — no asset limit. "
+    st.caption("Mean-variance, max Sortino, and min max-drawdown — up to 30 tickers. "
                "Backward-looking: it optimizes on historical returns, so treat the output "
                "as a starting point, not a recommendation.")
 
@@ -719,6 +719,13 @@ with tabs[5]:
             min_ret = st.number_input("Min acceptable return, % (min drawdown)",
                                       value=0.0, step=0.5, key="pf_minret") / 100
 
+    with st.expander("Compare with my current allocation (optional)"):
+        pf_alloc_raw = st.text_input(
+            "Current weights, % — same order as the tickers above",
+            value="", key="pf_alloc", placeholder="e.g. 30, 20, 15, 10, 10, 5, 5, 5")
+        st.caption("One number per ticker, in the same order. Leave blank to skip. "
+                   "They'll be normalized to 100%.")
+
     if st.button("Run optimization", type="primary", key="pf_run"):
         tickers = [t.strip().upper() for t in pf_tickers_raw.split(",") if t.strip()][:30]
         if len(tickers) < 2:
@@ -735,12 +742,17 @@ with tabs[5]:
                         w = PF.max_sortino(rets, mar, max_w, long_only)
                     else:
                         w = PF.min_max_drawdown(rets, min_ret, max_w, long_only)
-                    st.session_state["pf_result"] = {
-                        "tickers": list(rets.columns), "w": w,
-                        "w_eq": np.full(len(rets.columns), 1.0 / len(rets.columns)),
-                        "rets": rets, "mu": mu, "sigma": sigma,
-                        "objective": objective, "mar": mar, "dropped": dropped,
-                        "max_w": max_w, "long_only": long_only}
+                    w_cur, alloc_msg = PF.parse_weights(pf_alloc_raw, len(rets.columns))
+                    if w_cur is None and alloc_msg:
+                        st.error(alloc_msg)
+                    else:
+                        st.session_state["pf_result"] = {
+                            "tickers": list(rets.columns), "w": w,
+                            "w_eq": np.full(len(rets.columns), 1.0 / len(rets.columns)),
+                            "w_cur": w_cur, "alloc_note": alloc_msg,
+                            "rets": rets, "mu": mu, "sigma": sigma,
+                            "objective": objective, "mar": mar, "dropped": dropped,
+                            "max_w": max_w, "long_only": long_only}
             if dropped:
                 st.warning(f"Could not load: {', '.join(dropped)}")
             if rets.empty or rets.shape[1] < 2:
@@ -773,11 +785,16 @@ with tabs[5]:
                                                    "Ann. vol %": "{:.1f}%"}),
                          width="stretch", hide_index=True)
 
-        comp = pd.DataFrame([
-            {"Portfolio": "Optimized", **{k: v for k, v in s_opt.items()}},
-            {"Portfolio": "Equal weight", **{k: v for k, v in s_eq.items()}},
-        ])
-        st.markdown("#### Optimized vs equal weight")
+        comp_rows = [{"Portfolio": "Optimized", **s_opt},
+                     {"Portfolio": "Equal weight", **s_eq}]
+        w_cur = res.get("w_cur")
+        if w_cur is not None:
+            comp_rows.append({"Portfolio": "Current allocation",
+                              **PF.stats(w_cur, rets, res["mar"])})
+            if res.get("alloc_note"):
+                st.caption(res["alloc_note"])
+        comp = pd.DataFrame(comp_rows)
+        st.markdown("#### Optimized vs equal weight vs current")
         st.dataframe(comp.style.format({"ann_ret": "{:.1%}", "ann_vol": "{:.1%}",
                                                 "sharpe": "{:.2f}", "sortino": "{:.2f}",
                                                 "max_dd": "{:.1%}"}),
@@ -792,6 +809,8 @@ with tabs[5]:
             st.caption("Frontier uses the same bounds as the optimizer.")
 
         st.markdown("#### Growth of $10,000")
-        st.plotly_chart(charts.growth_chart({
-            "Optimized": PF.growth(w, rets),
-            "Equal weight": PF.growth(w_eq, rets)}), width="stretch")
+        gseries = {"Optimized": PF.growth(w, rets),
+                   "Equal weight": PF.growth(w_eq, rets)}
+        if w_cur is not None:
+            gseries["Current allocation"] = PF.growth(w_cur, rets)
+        st.plotly_chart(charts.growth_chart(gseries), width="stretch")
