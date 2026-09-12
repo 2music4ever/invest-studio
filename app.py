@@ -370,10 +370,14 @@ with tabs[1]:
             st.info("Current price implies growth outside a sane −5%…+40% range — "
                     "expectations are either euphoric or deeply pessimistic.")
         else:
+            # Apples-to-apples: compare the implied flat 10-yr rate against the
+            # base case's own 10-yr equivalent (geometric mean of g1 x5, g2 x5).
+            g_base_equiv = (1 + g1) ** 0.5 * (1 + g2) ** 0.5 - 1
             st.markdown(f"The current price of **{fmt_money(price)}** implies **{implied * 100:.1f}%** "
                         f"annual revenue growth for 10 years at your margin/discount assumptions. "
-                        f"Your base case assumes {g1 * 100:.0f}%/then {g2 * 100:.0f}% — "
-                        + ("the market is more optimistic than you." if implied > g1
+                        f"Your base case ({g1 * 100:.0f}%/then {g2 * 100:.0f}%) works out to "
+                        f"**{g_base_equiv * 100:.1f}%** annualized over 10 years — "
+                        + ("the market is pricing in more growth than you expect." if implied > g_base_equiv
                            else "the market is pricing in less growth than you expect."))
 
         with st.expander("Year-by-year DCF schedule"):
