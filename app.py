@@ -88,7 +88,7 @@ if "intro_seen" not in st.session_state:
     st.session_state.intro_seen = False
 if not st.session_state.intro_seen:
     st.markdown(
-        '<div class="is-intro"><b>New here?</b> Enter a ticker in the sidebar, then walk '
+        '<div class="is-intro"><b>New here?</b> Enter a ticker below, then walk '
         "the tabs in order: <b>Chart &amp; Trend</b> → <b>Valuation Lab</b> → "
         "<b>Accumulation</b> → <b>Dislocation</b> → <b>Entry Planner</b>. "
         "Everything is assumption-driven — change the inputs and watch the outputs move. "
@@ -117,10 +117,12 @@ def fmt_pct(x, digits=1):
     return "n/a" if x is None or (isinstance(x, float) and np.isnan(x)) else f"{x * 100:.{digits}f}%"
 
 
-# ---------- sidebar ----------
-ticker = st.sidebar.text_input("Ticker", "MSFT").strip().upper()
+# ---------- ticker ----------
+tcol, _ = st.columns([1, 2.4])
+with tcol:
+    ticker = st.text_input("Ticker", "MSFT").strip().upper()
+st.caption("Data: Yahoo Finance (free). Estimates update intraday; fundamentals quarterly.")
 period = "10y"  # single source of truth; chart zoom is controlled by the range pills
-st.sidebar.caption("Data: Yahoo Finance (free). Estimates update intraday; fundamentals quarterly.")
 
 if not ticker:
     st.info("Enter a ticker to begin.")
