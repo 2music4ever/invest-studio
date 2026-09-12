@@ -251,3 +251,55 @@ def roic_chart(df: pd.DataFrame) -> go.Figure:
     fig.update_layout(template="plotly_dark", height=320,
                       margin=dict(l=10, r=10, t=24, b=10), yaxis_title="%")
     return _apply(fig)
+
+
+def weights_bar(wdf: pd.DataFrame) -> go.Figure:
+    """Horizontal bar chart of portfolio weights, sorted descending."""
+    d = wdf.sort_values("Weight", ascending=True)
+    fig = go.Figure(go.Bar(
+        x=d["Weight"] * 100, y=d["Ticker"], orientation="h",
+        marker_color=[GOLD if v > 0 else GRAY for v in d["Weight"]],
+        opacity=0.9,
+        hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
+    ))
+    fig.update_layout(template="plotly_dark", height=max(220, 34 * len(d) + 60),
+                      margin=dict(l=10, r=10, t=10, b=10), xaxis_title="Weight %")
+    return _apply(fig)
+
+
+def frontier_chart(frontier: pd.DataFrame, opt: tuple, eq: tuple) -> go.Figure:
+    """Efficient frontier with max-Sharpe and equal-weight points marked."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=frontier["vol"] * 100, y=frontier["ret"] * 100,
+                             mode="lines", name="Efficient frontier",
+                             line=dict(color=BLUE, width=2.5),
+                             hovertemplate="Vol %{x:.1f}% / Ret %{y:.1f}%<extra></extra>"))
+    fig.add_trace(go.Scatter(x=[opt[0] * 100], y=[opt[1] * 100], mode="markers",
+                             name="Optimized", marker=dict(color=GOLD, size=12,
+                             line=dict(color="#0B0E14", width=2)),
+                             hovertemplate="Optimized: %{x:.1f}% / %{y:.1f}%<extra></extra>"))
+    fig.add_trace(go.Scatter(x=[eq[0] * 100], y=[eq[1] * 100], mode="markers",
+                             name="Equal weight", marker=dict(color=GRAY, size=10,
+                             symbol="diamond"),
+                             hovertemplate="Equal weight: %{x:.1f}% / %{y:.1f}%<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=380,
+                      margin=dict(l=10, r=10, t=10, b=10),
+                      xaxis_title="Annualized volatility %",
+                      yaxis_title="Annualized return %",
+                      legend=dict(orientation="h", y=1.08))
+    return _apply(fig)
+
+
+def growth_chart(series: dict) -> go.Figure:
+    """Growth of $10k lines for optimized vs equal-weight portfolios."""
+    fig = go.Figure()
+    colors = [GOLD, GRAY, TEAL]
+    for i, (name, s) in enumerate(series.items()):
+        fig.add_trace(go.Scatter(x=s.index, y=s.values, mode="lines", name=name,
+                                 line=dict(color=colors[i % len(colors)], width=2.2),
+                                 hovertemplate="%{x|%Y-%m-%d}: $%{y:,.0f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=380,
+                      margin=dict(l=10, r=10, t=10, b=10),
+                      yaxis_title="Growth of $10,000",
+                      legend=dict(orientation="h", y=1.08))
+    return _apply(fig)

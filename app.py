@@ -5,6 +5,7 @@ import streamlit as st
 
 import charts
 import data as D
+import portfolio as PF
 import technical as T
 import valuation as V
 
@@ -143,7 +144,7 @@ last = px.iloc[-1]
 regime_text, regime_color = T.regime(price, last.get("WMA50", np.nan), last.get("WMA200", np.nan))
 
 tabs = st.tabs(["Chart & Trend", "Valuation Lab", "Accumulation",
-                "Dislocation", "Entry Planner"])
+                "Dislocation", "Entry Planner", "Portfolio"])
 
 # ================= TAB 1 — CHART & TREND =================
 with tabs[0]:
@@ -685,3 +686,110 @@ _For education and research only — not investment advice._
 """
     st.download_button("Download research note (.md)", report,
                        file_name=f"{ticker}_research_note.md")
+
+# ================= TAB 6 — PORTFOLIO =================
+with tabs[5]:
+    st.subheader("Portfolio optimization")
+    st.caption("Mean-variance, max Sortino, and min max-drawdown — no asset limit. "
+               "Backward-looking: it optimizes on historical returns, so treat the output "
+               "as a starting point, not a recommendation.")
+
+    pf_tickers_raw = st.text_area(
+        "Tickers (comma-separated, up to 30)",
+        value="NVDA, MSFT, META, AMD, AVGO, TSM, AAPL, GOOGL", key="pf_tickers")
+    c1, c2 = st.columns(2)
+    with c1:
+        objective = st.selectbox(
+            "Objective",
+            ["Mean-variance (max Sharpe)", "Max Sortino ratio", "Min max drawdown"],
+            key="pf_obj")
+    with c2:
+        pf_lookback = st.pills("Lookback", ["1Y", "3Y", "5Y", "10Y"],
+                               default="5Y", key="pf_lookback")
+    with st.expander("Constraints & assumptions"):
+        cc1, cc2 = st.columns(2)
+        with cc1:
+            long_only = st.checkbox("Long only", value=True, key="pf_longonly")
+            max_w = st.slider("Max weight per asset", 10, 100, 50, 5, key="pf_maxw") / 100
+        with cc2:
+            mar = st.number_input("Min acceptable return, % (Sortino)",
+                                  value=0.0, step=0.5, key="pf_mar") / 100
+            min_ret = st.number_input("Min acceptable return, % (min drawdown)",
+                                      value=0.0, step=0.5, key="pf_minret") / 100
+
+    if st.button("Run optimization", type="primary", key="pf_run"):
+        tickers = [t.strip().upper() for t in pf_tickers_raw.split(",") if t.strip()][:30]
+        if len(tickers) < 2:
+            st.error("Enter at least 2 tickers.")
+        else:
+            with st.spinner(f"Loading {len(tickers)} tickers and optimizing…"):
+                rets, dropped = PF.get_returns(
+                    tickers, {"1Y": "1y", "3Y": "3y", "5Y": "5y", "10Y": "10y"}[pf_lookback or "5Y"])
+                if not rets.empty:
+                    mu, sigma = PF.annualized(rets)
+                    if objective.startswith("Mean"):
+                        w = PF.max_sharpe(mu, sigma, max_w, long_only)
+                    elif objective.startswith("Max Sortino"):
+                        w = PF.max_sortino(rets, mar, max_w, long_only)
+                    else:
+                        w = PF.min_max_drawdown(rets, min_ret, max_w, long_only)
+                    st.session_state["pf_result"] = {
+                        "tickers": list(rets.columns), "w": w,
+                        "w_eq": np.full(len(rets.columns), 1.0 / len(rets.columns)),
+                        "rets": rets, "mu": mu, "sigma": sigma,
+                        "objective": objective, "mar": mar, "dropped": dropped,
+                        "max_w": max_w, "long_only": long_only}
+            if dropped:
+                st.warning(f"Could not load: {', '.join(dropped)}")
+            if rets.empty or rets.shape[1] < 2:
+                st.error("Not enough usable tickers — need at least 2 with overlapping history.")
+
+    res = st.session_state.get("pf_result")
+    if res is not None:
+        tickers, w, w_eq = res["tickers"], res["w"], res["w_eq"]
+        rets, mu, sigma = res["rets"], res["mu"], res["sigma"]
+        res_max_w, res_long_only = res.get("max_w", 0.5), res.get("long_only", True)
+        s_opt, s_eq = PF.stats(w, rets, res["mar"]), PF.stats(w_eq, rets, res["mar"])
+
+        st.markdown(f"#### Optimized weights — {res['objective']}")
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Ann. return", f"{s_opt['ann_ret'] * 100:.1f}%")
+        m2.metric("Ann. volatility", f"{s_opt['ann_vol'] * 100:.1f}%")
+        m3.metric("Sharpe", f"{s_opt['sharpe']:.2f}")
+        m4.metric("Sortino", f"{s_opt['sortino']:.2f}")
+        m5.metric("Max drawdown", f"{s_opt['max_dd'] * 100:.1f}%")
+
+        wdf = pd.DataFrame({"Ticker": tickers, "Weight": w,
+                            "Ann. return %": [mu[t] * 100 for t in tickers],
+                            "Ann. vol %": [np.sqrt(sigma.loc[t, t]) * 100 for t in tickers]})
+        wdf = wdf.sort_values("Weight", ascending=False).reset_index(drop=True)
+        c1, c2 = st.columns([3, 2])
+        with c1:
+            st.plotly_chart(charts.weights_bar(wdf), width="stretch")
+        with c2:
+            st.dataframe(wdf.style.format({"Weight": "{:.1%}", "Ann. return %": "{:.1f}%",
+                                                   "Ann. vol %": "{:.1f}%"}),
+                         width="stretch", hide_index=True)
+
+        comp = pd.DataFrame([
+            {"Portfolio": "Optimized", **{k: v for k, v in s_opt.items()}},
+            {"Portfolio": "Equal weight", **{k: v for k, v in s_eq.items()}},
+        ])
+        st.markdown("#### Optimized vs equal weight")
+        st.dataframe(comp.style.format({"ann_ret": "{:.1%}", "ann_vol": "{:.1%}",
+                                                "sharpe": "{:.2f}", "sortino": "{:.2f}",
+                                                "max_dd": "{:.1%}"}),
+                     width="stretch", hide_index=True)
+
+        if res["objective"].startswith("Mean"):
+            st.markdown("#### Efficient frontier")
+            front = PF.efficient_frontier(mu, sigma, res_max_w, res_long_only)
+            opt_pt = (s_opt["ann_vol"], s_opt["ann_ret"])
+            eq_pt = (s_eq["ann_vol"], s_eq["ann_ret"])
+            st.plotly_chart(charts.frontier_chart(front, opt_pt, eq_pt), width="stretch")
+            st.caption("Frontier uses the same bounds as the optimizer.")
+
+        st.markdown("#### Growth of $10,000")
+        st.plotly_chart(charts.growth_chart({
+            "Optimized": PF.growth(w, rets),
+            "Equal weight": PF.growth(w_eq, rets)}), width="stretch")
