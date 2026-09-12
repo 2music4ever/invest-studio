@@ -92,6 +92,8 @@ if not st.session_state.intro_seen:
         '<div class="is-intro"><b>New here?</b> Enter a ticker below, then walk '
         "the tabs in order: <b>Chart &amp; Trend</b> → <b>Valuation Lab</b> → "
         "<b>Accumulation</b> → <b>Dislocation</b> → <b>Entry Planner</b>. "
+        "The <b>Portfolio</b> tab optimizes across many tickers at once "
+        "(mean-variance, Sortino, min drawdown) with its own ticker list. "
         "Everything is assumption-driven — change the inputs and watch the outputs move. "
         "Built on free Yahoo Finance data: a starting point for your own research, not a verdict.</div>",
         unsafe_allow_html=True,
