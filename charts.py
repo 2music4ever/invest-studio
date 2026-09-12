@@ -80,9 +80,9 @@ def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
     p["p90"] = p["pe"].expanding().quantile(0.9)
     fig = go.Figure()
     zones = [
-        (p["pe"] <= p["p10"], "Cheap — bottom 10%", TEAL),
-        ((p["pe"] > p["p10"]) & (p["pe"] < p["p90"]), "Fair value", GOLD),
-        (p["pe"] >= p["p90"], "Expensive — top 10%", RED),
+        (p["pe"] <= p["p10"], "Low — bottom 10%", TEAL),
+        ((p["pe"] > p["p10"]) & (p["pe"] < p["p90"]), "Mid-range", GOLD),
+        (p["pe"] >= p["p90"], "High — top 10%", RED),
     ]
     for mask, name, color in zones:
         m = mask | mask.shift(1, fill_value=False) | mask.shift(-1, fill_value=False)
