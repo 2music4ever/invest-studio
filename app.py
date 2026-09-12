@@ -410,6 +410,7 @@ with tabs[1]:
             st.info("Not enough statement history to score quality for this ticker.")
         if not q["roic"].empty:
             st.plotly_chart(charts.roic_chart(q["roic"]), width="stretch")
+            st.caption("Return on invested capital = EBIT × (1 − tax) / invested capital.")
 
         st.markdown("### Growth valuation — VC / exit-multiple method")
         st.caption("For unprofitable growers: project revenue to a horizon year, apply a mature "
@@ -476,13 +477,17 @@ with tabs[2]:
     poc = float(prof["poc"].iloc[0])
     c1, c2 = st.columns(2)
     with c1:
+        st.markdown("**Volume profile (VPVR)**")
         st.plotly_chart(charts.vpvr_chart(prof, price), width="stretch")
     with c2:
+        st.markdown("**Accumulation / distribution + money flow**")
         d = px.copy()
         d["AD"] = T.accumulation_distribution(px)
         d["CMF20"] = T.cmf(px, 20)
         d["CMF60"] = T.cmf(px, 60)
         st.plotly_chart(charts.flow_chart(d), width="stretch")
+    st.caption("Tallest VPVR bars mark institutional support zones. "
+               "A rising A/D line while price consolidates = demand absorbing supply.")
     cmf60_now = float(d["CMF60"].iloc[-1]) if d["CMF60"].notna().any() else None
     ad_trend = "rising" if d["AD"].iloc[-1] > d["AD"].iloc[-63] else "falling"
     st.markdown(f"**Point of control (heaviest volume):** {fmt_money(poc)} — "

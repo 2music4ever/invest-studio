@@ -45,8 +45,7 @@ def sensitivity_heatmap(grid: pd.DataFrame, price: float) -> go.Figure:
         hovertemplate="Growth %{y}<br>Exit %{x}<br>Value $%{z:,.0f}<extra></extra>",
         colorbar=dict(title="Value / share"),
     ))
-    fig.update_layout(height=400, margin=dict(l=10, r=10, t=50, b=10),
-                      title="Sensitivity — per-share value across growth × exit multiple",
+    fig.update_layout(height=400, margin=dict(l=10, r=10, t=16, b=10),
                       yaxis=dict(autorange="reversed"))
     return _apply(fig)
 
@@ -92,7 +91,6 @@ def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
                              fillcolor="rgba(47,191,113,0.10)",
                              line=dict(width=0), showlegend=False, hoverinfo="skip"))
     fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10),
-                      title="Historical P/E with percentile bands — dips under the 10th percentile are the valuation zone",
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))
     return _apply(fig)
 
@@ -120,9 +118,6 @@ def fundamentals_chart(df: pd.DataFrame, a: str, b: str | None, meta: dict) -> g
                                  line=dict(color=GOLD, width=2.5), yaxis="y2"))
         layout["yaxis2"] = dict(title=ybtitle, tickformat=ybfmt, overlaying="y",
                                 side="right", showgrid=False)
-        layout["title"] = f"{la} vs {lb} — fiscal periods"
-    else:
-        layout["title"] = f"{la} — fiscal periods"
     fig.update_layout(**layout)
     return _apply(fig)
 
@@ -138,7 +133,6 @@ def vpvr_chart(prof: pd.DataFrame, price_now: float) -> go.Figure:
     fig.add_hline(y=price_now, line_color=RED,
                   annotation_text=f"Now {price_now:.2f}")
     fig.update_layout(height=420, margin=dict(l=10, r=10, t=30, b=10),
-                      title="Volume profile (VPVR) — tallest bars are institutional support zones",
                       template="plotly_dark", xaxis_title="Volume", yaxis_title="Price")
     return _apply(fig)
 
@@ -154,8 +148,7 @@ def flow_chart(df: pd.DataFrame) -> go.Figure:
             fig.add_trace(go.Scatter(x=d.index, y=d[col], name=col,
                                      line=dict(color=color, width=1.2)), row=2, col=1)
     fig.add_hline(y=0, line_dash="dot", line_color=GRAY, row=2, col=1)
-    fig.update_layout(height=460, margin=dict(l=10, r=10, t=30, b=10),
-                      title="Accumulation/Distribution + Chaikin Money Flow (smoothed)",
+    fig.update_layout(height=460, margin=dict(l=10, r=10, t=40, b=10),
                       template="plotly_dark", legend=dict(orientation="h", y=1.08))
     return _apply(fig)
 
@@ -169,7 +162,6 @@ def rs_chart(rs_stock: pd.Series, rs_sector: pd.Series | None) -> go.Figure:
                                  line=dict(color=BLUE, width=1.4)))
     fig.add_hline(y=100, line_dash="dot", line_color=GRAY)
     fig.update_layout(height=340, margin=dict(l=10, r=10, t=30, b=10),
-                      title="Relative strength (rebased to 100) — rising = hidden demand",
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))
     return _apply(fig)
 
@@ -198,7 +190,7 @@ def target_range(lo, mean, hi, price=None):
     fig.update_xaxes(range=[lo - pad, hi + pad])
     fig.update_yaxes(range=[-1.2, 1.2], showticklabels=False, zeroline=False)
     fig.update_layout(height=260, margin=dict(t=36, b=44, l=10, r=10),
-                      title="Analyst price-target range (12-mo)", font_color=INK,
+                      font_color=INK,
                       template="plotly_dark",
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     return _apply(fig)
@@ -231,7 +223,6 @@ def scenario_bars(scenarios: pd.DataFrame, price: float) -> go.Figure:
     fig.add_hline(y=price, line_dash="dash", line_color=AMBER,
                   annotation_text=f"Current ${price:,.2f}")
     fig.update_layout(height=340, margin=dict(l=10, r=10, t=30, b=10),
-                      title="Bear / base / bull intrinsic values vs current price",
                       template="plotly_dark", yaxis_title="Per-share value ($)")
     return _apply(fig)
 
@@ -247,8 +238,8 @@ def bridge_chart(items: list[tuple[str, float]], total: float) -> go.Figure:
         decreasing=dict(marker=dict(color=RED)),
         totals=dict(marker=dict(color=GOLD)),
     ))
-    fig.update_layout(title="Expected annual return bridge", template="plotly_dark",
-                      height=380, margin=dict(l=10, r=10, t=40, b=10),
+    fig.update_layout(template="plotly_dark",
+                      height=380, margin=dict(l=10, r=10, t=24, b=10),
                       yaxis_title="% per year")
     return _apply(fig)
 
@@ -257,7 +248,6 @@ def roic_chart(df: pd.DataFrame) -> go.Figure:
     """Annual ROIC bars."""
     fig = go.Figure(go.Bar(x=df["Year"], y=df["ROIC"] * 100, name="ROIC",
                            marker_color=TEAL, opacity=0.85))
-    fig.update_layout(title="Return on invested capital (EBIT×(1−tax) / invested capital)",
-                      template="plotly_dark", height=320,
-                      margin=dict(l=10, r=10, t=40, b=10), yaxis_title="%")
+    fig.update_layout(template="plotly_dark", height=320,
+                      margin=dict(l=10, r=10, t=24, b=10), yaxis_title="%")
     return _apply(fig)
