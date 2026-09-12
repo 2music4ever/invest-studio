@@ -267,7 +267,8 @@ def weights_bar(wdf: pd.DataFrame) -> go.Figure:
     return _apply(fig)
 
 
-def frontier_chart(frontier: pd.DataFrame, opt: tuple, eq: tuple) -> go.Figure:
+def frontier_chart(frontier: pd.DataFrame, opt: tuple, eq: tuple,
+                   cur: tuple = None) -> go.Figure:
     """Efficient frontier with max-Sharpe and equal-weight points marked."""
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=frontier["vol"] * 100, y=frontier["ret"] * 100,
@@ -282,6 +283,11 @@ def frontier_chart(frontier: pd.DataFrame, opt: tuple, eq: tuple) -> go.Figure:
                              name="Equal weight", marker=dict(color=GRAY, size=10,
                              symbol="diamond"),
                              hovertemplate="Equal weight: %{x:.1f}% / %{y:.1f}%<extra></extra>"))
+    if cur is not None:
+        fig.add_trace(go.Scatter(x=[cur[0] * 100], y=[cur[1] * 100], mode="markers",
+                                 name="Current allocation", marker=dict(color=TEAL, size=12,
+                                 symbol="star"),
+                                 hovertemplate="Current: %{x:.1f}% / %{y:.1f}%<extra></extra>"))
     fig.update_layout(template="plotly_dark", height=380,
                       margin=dict(l=10, r=10, t=10, b=10),
                       xaxis_title="Annualized volatility %",

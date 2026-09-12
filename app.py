@@ -805,7 +805,12 @@ with tabs[5]:
             front = PF.efficient_frontier(mu, sigma, res_max_w, res_long_only)
             opt_pt = (s_opt["ann_vol"], s_opt["ann_ret"])
             eq_pt = (s_eq["ann_vol"], s_eq["ann_ret"])
-            st.plotly_chart(charts.frontier_chart(front, opt_pt, eq_pt), width="stretch")
+            cur_pt = None
+            if w_cur is not None:
+                s_cur = PF.stats(w_cur, rets, res["mar"])
+                cur_pt = (s_cur["ann_vol"], s_cur["ann_ret"])
+            st.plotly_chart(charts.frontier_chart(front, opt_pt, eq_pt, cur_pt),
+                            width="stretch")
             st.caption("Frontier uses the same bounds as the optimizer.")
 
         st.markdown("#### Growth of $10,000")
