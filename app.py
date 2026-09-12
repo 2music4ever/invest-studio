@@ -8,10 +8,76 @@ import data as D
 import technical as T
 import valuation as V
 
-st.set_page_config(page_title="Invest Studio", page_icon="📈", layout="wide")
-st.title("📈 Invest Studio")
-st.caption("Long-term investing workbench — valuation modeling, accumulation footprints, and entry planning. "
-           "For education and research only, not investment advice.")
+st.set_page_config(page_title="Invest Studio", page_icon="assets/favicon.png", layout="wide")
+
+# ---------- professional chrome: typography, theme, hide Streamlit branding ----------
+CHROME_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stDeployButton {display: none;}
+[data-testid="stToolbar"] {display: none;}
+[data-testid="stStatusWidget"] {display: none;}
+header[data-testid="stHeader"] {background: rgba(0,0,0,0);}
+
+html, body, [class*="css"], .stApp {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.block-container {padding-top: 1.4rem; max-width: 1220px;}
+
+/* brand banner */
+.is-banner {display: flex; align-items: center; gap: 16px; padding: 8px 2px 2px;}
+.is-mark {width: 46px; height: 46px; border-radius: 12px; flex: 0 0 46px;
+  background: linear-gradient(135deg, #E3BC63 0%, #C8A24B 55%, #8F6F2A 100%);
+  color: #0B0E14; font-weight: 800; font-size: 19px; letter-spacing: 1px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(200,162,75,0.28);}
+.is-title {font-size: 20px; font-weight: 700; letter-spacing: 3.5px; color: #F2F4F8; line-height: 1.1;}
+.is-sub {font-size: 12.5px; color: #9AA4B2; margin-top: 4px;}
+.is-rule {height: 1px; margin: 12px 0 4px;
+  background: linear-gradient(90deg, #C8A24B 0%, rgba(200,162,75,0.18) 55%, transparent 100%);}
+
+/* metric cards */
+[data-testid="stMetric"] {background: #141926; border: 1px solid #232C42;
+  border-radius: 10px; padding: 12px 16px;}
+[data-testid="stMetricLabel"] {font-size: 10.5px; letter-spacing: 1.4px;
+  text-transform: uppercase; color: #8B93A7;}
+[data-testid="stMetricValue"] {font-size: 25px; font-weight: 600;}
+
+/* tabs */
+button[data-baseweb="tab"] {font-size: 12px; letter-spacing: 1.6px;
+  text-transform: uppercase; color: #8B93A7; padding: 10px 16px;}
+button[data-baseweb="tab"]:hover {color: #E9ECF3;}
+button[data-baseweb="tab"][aria-selected="true"] {color: #E9ECF3; font-weight: 600;}
+[data-testid="stTabs"] [data-baseweb="tab-highlight"] {background-color: #C8A24B;}
+
+/* buttons */
+.stButton > button {border-radius: 8px; border: 1px solid #C8A24B;
+  color: #E3BC63; background: transparent; font-weight: 600;}
+.stButton > button:hover {background: rgba(200,162,75,0.12); border-color: #E3BC63;}
+.stDownloadButton > button {border: 1px solid #2A3348; color: #E9ECF3;
+  background: #1A2130; font-weight: 500;}
+.stDownloadButton > button:hover {border-color: #C8A24B; color: #E3BC63;}
+
+/* sidebar + expanders + inputs */
+[data-testid="stSidebar"] {background: #0D1119; border-right: 1px solid #1C2333;}
+[data-testid="stExpander"] {border: 1px solid #232C42; border-radius: 10px; background: #11151F;}
+[data-baseweb="input"], [data-baseweb="select"] {border-radius: 8px;}
+
+h1, h2, h3 {letter-spacing: 0.2px;}
+"""
+
+st.markdown(f"<style>{CHROME_CSS}</style>", unsafe_allow_html=True)
+st.markdown(
+    '<div class="is-banner"><div class="is-mark">IS</div><div>'
+    '<div class="is-title">INVEST STUDIO</div>'
+    '<div class="is-sub">Long-term investing workbench — valuation modeling, '
+    'accumulation footprints, entry planning</div></div></div>'
+    '<div class="is-rule"></div>',
+    unsafe_allow_html=True,
+)
+st.caption("For education and research only — not investment advice.")
 
 
 def fmt_money(x):
@@ -54,8 +120,8 @@ px = T.add_trend(px)
 last = px.iloc[-1]
 regime_text, regime_color = T.regime(price, last.get("WMA50", np.nan), last.get("WMA200", np.nan))
 
-tabs = st.tabs(["📊 Chart & Trend", "🧮 Valuation Lab", "🐋 Accumulation",
-                "🔭 Dislocation", "🎯 Entry Planner"])
+tabs = st.tabs(["Chart & Trend", "Valuation Lab", "Accumulation",
+                "Dislocation", "Entry Planner"])
 
 # ================= TAB 1 — CHART & TREND =================
 with tabs[0]:
@@ -179,7 +245,7 @@ with tabs[1]:
         st.error("Yahoo didn't return revenue or shares outstanding — it's likely "
                  "rate-limiting right now. Your assumptions can't be valued without them, "
                  "so nothing below is computed on bad data.")
-        if st.button("🔄 Retry loading data", key="retry_fund"):
+        if st.button("Retry loading data", key="retry_fund"):
             st.cache_data.clear()
             st.rerun()
         st.stop()
@@ -395,8 +461,7 @@ with tabs[1]:
                 [[_vcv(gg, mm) for mm in m_vals] for gg in g_vals],
                 index=[f"{gg * 100:.0f}% CAGR" for gg in g_vals],
                 columns=[f"{mm:.0f}x sales" for mm in m_vals])
-            st.dataframe(grid.style.format("${:,.0f}").background_gradient(cmap="RdYlGn"),
-                         width="stretch")
+            st.plotly_chart(charts.sensitivity_heatmap(grid, price), width="stretch")
             st.caption("Ignores future dilution and the cash burn to get there — treat this as the "
                        "destination value, then haircut for the journey.")
         else:
@@ -444,7 +509,7 @@ with tabs[3]:
         st.info("No analyst price targets available for this ticker right now — "
                 "Yahoo may be rate-limiting. (Google Finance blocks automated access, "
                 "so the app can't pull its Analysis tab directly.)")
-        if st.button("🔄 Retry analyst data", key="retry_an"):
+        if st.button("Retry analyst data", key="retry_an"):
             st.cache_data.clear()
             st.rerun()
 
@@ -486,7 +551,7 @@ with tabs[3]:
         disloc = (drift_0q > 0.02 and (breadth_0q or 0) >= 0 and
                   (price < below_200 or mom3 < -0.05))
         if disloc:
-            st.success(f"⚡ **Potential dislocation:** estimates revised **up {drift_0q * 100:+.1f}%** "
+            st.success(f"**Potential dislocation:** estimates revised **up {drift_0q * 100:+.1f}%** "
                        f"over 90 days while the price lags "
                        f"({'below' if price < below_200 else 'near'} the 200-day MA, "
                        f"3-month return {mom3 * 100:+.1f}%). Classic accumulation setup — verify the thesis.")

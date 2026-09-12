@@ -1,8 +1,54 @@
-"""Plotly chart builders."""
+"""Plotly chart builders — professional dark theme for Invest Studio."""
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+
+# ---- Professional palette ----
+GOLD = "#D4A94B"    # brand accent / primary price line
+BLUE = "#5B8DEF"    # primary data series
+VIOLET = "#9D7BEA"  # secondary series
+TEAL = "#2FBF71"    # up / positive
+RED = "#E5544A"     # down / negative
+AMBER = "#E8A33D"   # highlights (POC, thresholds)
+GRAY = "#9AA4B2"    # neutral
+INK = "#E9ECF3"     # primary text
+GRID = "rgba(255,255,255,0.07)"
+
+_FONT = dict(family="Inter, -apple-system, 'Segoe UI', sans-serif", color=INK)
+
+
+def _apply(fig: go.Figure) -> go.Figure:
+    """Shared professional styling: transparent surfaces, Inter type, subtle grid."""
+    fig.update_layout(
+        font=_FONT,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(gridcolor=GRID, zeroline=False),
+        yaxis=dict(gridcolor=GRID, zeroline=False),
+    )
+    return fig
+
+
+def sensitivity_heatmap(grid: pd.DataFrame, price: float) -> go.Figure:
+    """VC sensitivity grid as a styled heatmap, centered on the current price."""
+    z = grid.to_numpy(dtype=float)
+    fig = go.Figure(go.Heatmap(
+        z=z,
+        x=list(grid.columns),
+        y=list(grid.index),
+        colorscale=[[0.0, "#5C2320"], [0.5, "#1A1F2B"], [1.0, "#1D5C3A"]],
+        zmid=price,
+        texttemplate="$%{z:,.0f}",
+        textfont=dict(size=12, color=INK),
+        hovertemplate="Growth %{y}<br>Exit %{x}<br>Value $%{z:,.0f}<extra></extra>",
+        colorbar=dict(title="Value / share"),
+    ))
+    fig.update_layout(height=400, margin=dict(l=10, r=10, t=50, b=10),
+                      title="Sensitivity — per-share value across growth × exit multiple",
+                      yaxis=dict(autorange="reversed"))
+    return _apply(fig)
 
 
 def price_chart(df: pd.DataFrame) -> go.Figure:
@@ -10,21 +56,21 @@ def price_chart(df: pd.DataFrame) -> go.Figure:
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25],
                         vertical_spacing=0.03)
     fig.add_trace(go.Scatter(x=d.index, y=d["Close"], name="Price",
-                             line=dict(color="#4C8DFF", width=1.6)), row=1, col=1)
-    for col, color, dash in (("MA50", "#FFB020", "solid"), ("MA200", "#B14CFF", "solid"),
-                             ("WMA50", "#2DD4A7", "dash"), ("WMA200", "#FF5C5C", "dash")):
+                             line=dict(color=GOLD, width=1.6)), row=1, col=1)
+    for col, color, dash in (("MA50", BLUE, "solid"), ("MA200", VIOLET, "solid"),
+                             ("WMA50", TEAL, "dash"), ("WMA200", RED, "dash")):
         if col in d and d[col].notna().any():
             fig.add_trace(go.Scatter(x=d.index, y=d[col], name=col,
                                      line=dict(color=color, width=1.1, dash=dash),
                                      opacity=0.9), row=1, col=1)
-    colors = np.where(d["Close"] >= d["Open"], "#2DD4A7", "#FF5C5C")
+    colors = np.where(d["Close"] >= d["Open"], TEAL, RED)
     fig.add_trace(go.Bar(x=d.index, y=d["Volume"], name="Volume",
                          marker_color=colors, opacity=0.45), row=2, col=1)
     fig.update_layout(height=560, margin=dict(l=10, r=10, t=30, b=10),
                       legend=dict(orientation="h", y=1.02),
                       template="plotly_dark")
     fig.update_xaxes(rangeslider_visible=False)
-    return fig
+    return _apply(fig)
 
 
 def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
@@ -35,20 +81,20 @@ def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
         p[name] = p["pe"].expanding().quantile(q)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=p.index, y=p["pe"], name="P/E (TTM)",
-                             line=dict(color="#4C8DFF", width=1.6)))
+                             line=dict(color=GOLD, width=1.6)))
     fig.add_trace(go.Scatter(x=p.index, y=p["p90"], name="90th %ile",
-                             line=dict(color="#FF5C5C", dash="dash", width=1)))
+                             line=dict(color=RED, dash="dash", width=1)))
     fig.add_trace(go.Scatter(x=p.index, y=p["p50"], name="Median",
-                             line=dict(color="#9AA4B2", dash="dot", width=1)))
+                             line=dict(color=GRAY, dash="dot", width=1)))
     fig.add_trace(go.Scatter(x=p.index, y=p["p10"], name="10th %ile",
-                             line=dict(color="#2DD4A7", dash="dash", width=1)))
+                             line=dict(color=TEAL, dash="dash", width=1)))
     fig.add_trace(go.Scatter(x=p.index, y=p["p10"], fill="tonexty",
-                             fillcolor="rgba(45,212,167,0.10)",
+                             fillcolor="rgba(47,191,113,0.10)",
                              line=dict(width=0), showlegend=False, hoverinfo="skip"))
     fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10),
                       title="Historical P/E with percentile bands — dips under the 10th percentile are the valuation zone",
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))
-    return fig
+    return _apply(fig)
 
 
 def fundamentals_chart(df: pd.DataFrame, a: str, b: str | None, meta: dict) -> go.Figure:
@@ -63,7 +109,7 @@ def fundamentals_chart(df: pd.DataFrame, a: str, b: str | None, meta: dict) -> g
 
     ya, yfmt, ytitle, la = scaled(a)
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=df["label"], y=ya, name=la, marker_color="#4C8DFF",
+    fig.add_trace(go.Bar(x=df["label"], y=ya, name=la, marker_color=BLUE,
                          opacity=0.8, yaxis="y"))
     layout = dict(height=400, margin=dict(l=10, r=10, t=40, b=10), template="plotly_dark",
                   legend=dict(orientation="h", y=1.02),
@@ -71,30 +117,30 @@ def fundamentals_chart(df: pd.DataFrame, a: str, b: str | None, meta: dict) -> g
     if b:
         yb, ybfmt, ybtitle, lb = scaled(b)
         fig.add_trace(go.Scatter(x=df["label"], y=yb, name=lb, mode="lines+markers",
-                                 line=dict(color="#FFB020", width=2.5), yaxis="y2"))
+                                 line=dict(color=GOLD, width=2.5), yaxis="y2"))
         layout["yaxis2"] = dict(title=ybtitle, tickformat=ybfmt, overlaying="y",
                                 side="right", showgrid=False)
         layout["title"] = f"{la} vs {lb} — fiscal periods"
     else:
         layout["title"] = f"{la} — fiscal periods"
     fig.update_layout(**layout)
-    return fig
+    return _apply(fig)
 
 
 def vpvr_chart(prof: pd.DataFrame, price_now: float) -> go.Figure:
     fig = go.Figure()
-    colors = ["#FFB020" if abs(p - prof["poc"].iloc[0]) < (prof["price"].max() - prof["price"].min()) / 72
-              else "#4C8DFF" for p in prof["price"]]
+    colors = [AMBER if abs(p - prof["poc"].iloc[0]) < (prof["price"].max() - prof["price"].min()) / 72
+              else BLUE for p in prof["price"]]
     fig.add_trace(go.Bar(y=prof["price"], x=prof["volume"], orientation="h",
                          marker_color=colors, opacity=0.75, name="Volume at price"))
-    fig.add_hline(y=prof["poc"].iloc[0], line_dash="dash", line_color="#FFB020",
+    fig.add_hline(y=prof["poc"].iloc[0], line_dash="dash", line_color=AMBER,
                   annotation_text=f"POC {prof['poc'].iloc[0]:.2f}")
-    fig.add_hline(y=price_now, line_color="#FF5C5C",
+    fig.add_hline(y=price_now, line_color=RED,
                   annotation_text=f"Now {price_now:.2f}")
     fig.update_layout(height=420, margin=dict(l=10, r=10, t=30, b=10),
                       title="Volume profile (VPVR) — tallest bars are institutional support zones",
                       template="plotly_dark", xaxis_title="Volume", yaxis_title="Price")
-    return fig
+    return _apply(fig)
 
 
 def flow_chart(df: pd.DataFrame) -> go.Figure:
@@ -102,30 +148,30 @@ def flow_chart(df: pd.DataFrame) -> go.Figure:
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.5, 0.5],
                         vertical_spacing=0.06)
     fig.add_trace(go.Scatter(x=d.index, y=d["AD"], name="A/D line",
-                             line=dict(color="#B14CFF", width=1.4)), row=1, col=1)
-    for col, color in (("CMF20", "#4C8DFF"), ("CMF60", "#2DD4A7")):
+                             line=dict(color=VIOLET, width=1.4)), row=1, col=1)
+    for col, color in (("CMF20", BLUE), ("CMF60", TEAL)):
         if col in d:
             fig.add_trace(go.Scatter(x=d.index, y=d[col], name=col,
                                      line=dict(color=color, width=1.2)), row=2, col=1)
-    fig.add_hline(y=0, line_dash="dot", line_color="#9AA4B2", row=2, col=1)
+    fig.add_hline(y=0, line_dash="dot", line_color=GRAY, row=2, col=1)
     fig.update_layout(height=460, margin=dict(l=10, r=10, t=30, b=10),
                       title="Accumulation/Distribution + Chaikin Money Flow (smoothed)",
                       template="plotly_dark", legend=dict(orientation="h", y=1.08))
-    return fig
+    return _apply(fig)
 
 
 def rs_chart(rs_stock: pd.Series, rs_sector: pd.Series | None) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=rs_stock.index, y=rs_stock, name="vs S&P 500",
-                             line=dict(color="#4C8DFF", width=1.6)))
+                             line=dict(color=GOLD, width=1.6)))
     if rs_sector is not None and not rs_sector.empty:
         fig.add_trace(go.Scatter(x=rs_sector.index, y=rs_sector, name="vs sector",
-                                 line=dict(color="#FFB020", width=1.4)))
-    fig.add_hline(y=100, line_dash="dot", line_color="#9AA4B2")
+                                 line=dict(color=BLUE, width=1.4)))
+    fig.add_hline(y=100, line_dash="dot", line_color=GRAY)
     fig.update_layout(height=340, margin=dict(l=10, r=10, t=30, b=10),
                       title="Relative strength (rebased to 100) — rising = hidden demand",
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))
-    return fig
+    return _apply(fig)
 
 
 def target_range(lo, mean, hi, price=None):
@@ -138,24 +184,24 @@ def target_range(lo, mean, hi, price=None):
     for x, name in ((lo, "Low"), (mean, "Mean"), (hi, "High")):
         fig.add_trace(go.Scatter(x=[x], y=[0], mode="markers", showlegend=False,
                                  hovertemplate=f"{name}: $%{{x:,.0f}}<extra></extra>",
-                                 marker=dict(size=15, color="#4C8DFF",
+                                 marker=dict(size=15, color=GOLD,
                                              line=dict(color="black", width=1))))
         fig.add_annotation(x=x, y=0, text=f"<b>{name}</b><br>${x:,.0f}",
                            showarrow=False, yshift=-42,
-                           font=dict(size=13, color="white"), align="center")
+                           font=dict(size=13, color=INK), align="center")
     if price:
-        fig.add_vline(x=price, line_dash="dash", line_color="white", opacity=0.85)
+        fig.add_vline(x=price, line_dash="dash", line_color=INK, opacity=0.85)
         fig.add_annotation(x=price, y=0, text=f"<b>Now</b><br>${price:,.0f}",
                            showarrow=False, yshift=44,
-                           font=dict(size=13, color="white"),
+                           font=dict(size=13, color=INK),
                            bgcolor="rgba(0,0,0,0.65)", borderpad=4, align="center")
     fig.update_xaxes(range=[lo - pad, hi + pad])
     fig.update_yaxes(range=[-1.2, 1.2], showticklabels=False, zeroline=False)
     fig.update_layout(height=260, margin=dict(t=36, b=44, l=10, r=10),
-                      title="Analyst price-target range (12-mo)", font_color="white",
+                      title="Analyst price-target range (12-mo)", font_color=INK,
                       template="plotly_dark",
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    return fig
+    return _apply(fig)
 
 
 def mos_gauge(mos: float | None, iv: float, price: float) -> go.Figure:
@@ -166,28 +212,28 @@ def mos_gauge(mos: float | None, iv: float, price: float) -> go.Figure:
         number={"suffix": "%", "font": {"size": 34}},
         title={"text": f"Margin of safety<br><span style='font-size:13px'>IV ${iv:,.2f} vs price ${price:,.2f}</span>"},
         gauge={"axis": {"range": [-60, 60]},
-               "bar": {"color": "#4C8DFF"},
-               "steps": [{"range": [-60, -10], "color": "rgba(255,92,92,0.25)"},
-                         {"range": [-10, 15], "color": "rgba(154,164,178,0.20)"},
-                         {"range": [15, 60], "color": "rgba(45,212,167,0.25)"}],
-               "threshold": {"line": {"color": "#FFB020", "width": 3}, "value": 0}}))
+               "bar": {"color": GOLD},
+               "steps": [{"range": [-60, -10], "color": "rgba(229,84,74,0.22)"},
+                         {"range": [-10, 15], "color": "rgba(154,164,178,0.18)"},
+                         {"range": [15, 60], "color": "rgba(47,191,113,0.22)"}],
+               "threshold": {"line": {"color": AMBER, "width": 3}, "value": 0}}))
     fig.update_layout(height=320, margin=dict(l=20, r=20, t=60, b=10),
                       template="plotly_dark")
-    return fig
+    return _apply(fig)
 
 
 def scenario_bars(scenarios: pd.DataFrame, price: float) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Bar(x=scenarios["Scenario"], y=scenarios["IV"],
-                         marker_color=["#FF5C5C", "#4C8DFF", "#2DD4A7"],
+                         marker_color=[RED, BLUE, TEAL],
                          text=[f"${v:,.0f}" for v in scenarios["IV"]],
                          textposition="outside", name="Intrinsic value"))
-    fig.add_hline(y=price, line_dash="dash", line_color="#FFB020",
+    fig.add_hline(y=price, line_dash="dash", line_color=AMBER,
                   annotation_text=f"Current ${price:,.2f}")
     fig.update_layout(height=340, margin=dict(l=10, r=10, t=30, b=10),
                       title="Bear / base / bull intrinsic values vs current price",
                       template="plotly_dark", yaxis_title="Per-share value ($)")
-    return fig
+    return _apply(fig)
 
 
 def bridge_chart(items: list[tuple[str, float]], total: float) -> go.Figure:
@@ -196,19 +242,22 @@ def bridge_chart(items: list[tuple[str, float]], total: float) -> go.Figure:
         x=[k for k, _ in items] + ["Expected return"],
         y=[v * 100 for _, v in items] + [total * 100],
         measure=["relative"] * len(items) + ["total"],
-        connector={"line": {"color": "#9AA4B2"}},
+        connector={"line": {"color": GRAY}},
+        increasing=dict(marker=dict(color=TEAL)),
+        decreasing=dict(marker=dict(color=RED)),
+        totals=dict(marker=dict(color=GOLD)),
     ))
     fig.update_layout(title="Expected annual return bridge", template="plotly_dark",
                       height=380, margin=dict(l=10, r=10, t=40, b=10),
                       yaxis_title="% per year")
-    return fig
+    return _apply(fig)
 
 
 def roic_chart(df: pd.DataFrame) -> go.Figure:
     """Annual ROIC bars."""
     fig = go.Figure(go.Bar(x=df["Year"], y=df["ROIC"] * 100, name="ROIC",
-                           marker_color="#2DD4A7", opacity=0.85))
+                           marker_color=TEAL, opacity=0.85))
     fig.update_layout(title="Return on invested capital (EBIT×(1−tax) / invested capital)",
                       template="plotly_dark", height=320,
                       margin=dict(l=10, r=10, t=40, b=10), yaxis_title="%")
-    return fig
+    return _apply(fig)
