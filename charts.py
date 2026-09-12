@@ -76,20 +76,20 @@ def valuation_bands(pe: pd.DataFrame) -> go.Figure | None:
     if pe.empty or len(pe) < 10:
         return None
     p = pe.copy()
-    for q, name in ((0.1, "p10"), (0.25, "p25"), (0.5, "p50"), (0.75, "p75"), (0.9, "p90")):
-        p[name] = p["pe"].expanding().quantile(q)
+    p["p10"] = p["pe"].expanding().quantile(0.1)
+    p["p90"] = p["pe"].expanding().quantile(0.9)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=p.index, y=p["pe"], name="P/E (TTM)",
-                             line=dict(color=GOLD, width=1.6)))
-    fig.add_trace(go.Scatter(x=p.index, y=p["p90"], name="90th %ile",
-                             line=dict(color=RED, dash="dash", width=1)))
-    fig.add_trace(go.Scatter(x=p.index, y=p["p50"], name="Median",
-                             line=dict(color=GRAY, dash="dot", width=1)))
-    fig.add_trace(go.Scatter(x=p.index, y=p["p10"], name="10th %ile",
-                             line=dict(color=TEAL, dash="dash", width=1)))
-    fig.add_trace(go.Scatter(x=p.index, y=p["p10"], fill="tonexty",
-                             fillcolor="rgba(47,191,113,0.10)",
-                             line=dict(width=0), showlegend=False, hoverinfo="skip"))
+    zones = [
+        (p["pe"] <= p["p10"], "Cheap — bottom 10%", TEAL),
+        ((p["pe"] > p["p10"]) & (p["pe"] < p["p90"]), "Fair value", GOLD),
+        (p["pe"] >= p["p90"], "Expensive — top 10%", RED),
+    ]
+    for mask, name, color in zones:
+        m = mask | mask.shift(1, fill_value=False) | mask.shift(-1, fill_value=False)
+        seg = p["pe"].where(m)
+        fig.add_trace(go.Scatter(x=seg.index, y=seg.values, mode="lines", name=name,
+                                 line=dict(color=color, width=2.2),
+                                 hovertemplate="P/E %{y:.1f}<extra>" + name + "</extra>"))
     fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10),
                       template="plotly_dark", legend=dict(orientation="h", y=1.02))
     return _apply(fig)

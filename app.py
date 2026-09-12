@@ -164,20 +164,20 @@ with tabs[0]:
     else:
         st.caption("No structure flags in this range.")
 
-    st.markdown("### Historical valuation bands")
+    st.markdown("### P/E valuation zones")
     pe = D.get_ttm_pe(ticker, px["Close"])
     fwd_pe = snap.get("forward_pe")
     fig = charts.valuation_bands(pe)
     if fig:
         st.plotly_chart(fig, width="stretch")
         cur_pe = pe["pe"].iloc[-1]
-        cap = (f"Trailing P/E **{cur_pe:.1f}** vs 10th percentile "
-               f"**{pe['pe'].quantile(0.1):.1f}** and median "
-               f"**{pe['pe'].quantile(0.5):.1f}**. ")
+        cap = (f"Trailing P/E **{cur_pe:.1f}**. The line is colored by where each point "
+               f"sat vs its own history up to that date — teal = bottom 10% (cheap), "
+               f"red = top 10% (expensive). ")
         if fwd_pe:
             cap += (f"Current forward P/E **{fwd_pe:.1f}** (Yahoo) — where the "
                     "market prices next-12-month earnings vs the trailing history. ")
-        cap += ("Bands are trailing only: free data has no historical forward-estimate series. "
+        cap += ("Zones are trailing only: free data has no historical forward-estimate series. "
                 "Built from annual EPS (yearly points) plus recent TTM EPS (weekly).")
         st.caption(cap)
     else:
