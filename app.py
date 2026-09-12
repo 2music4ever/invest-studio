@@ -38,6 +38,11 @@ html, body, [class*="css"], .stApp {
 .is-rule {height: 1px; margin: 12px 0 4px;
   background: linear-gradient(90deg, #C8A24B 0%, rgba(200,162,75,0.18) 55%, transparent 100%);}
 
+/* first-visit intro card */
+.is-intro {background: #141926; border: 1px solid #232C42; border-left: 3px solid #C8A24B;
+  border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #C6CDDB; margin: 8px 0 2px;}
+.is-intro b {color: #E9ECF3; font-weight: 600;}
+
 /* metric cards */
 [data-testid="stMetric"] {background: #141926; border: 1px solid #232C42;
   border-radius: 10px; padding: 12px 16px;}
@@ -78,6 +83,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.caption("For education and research only — not investment advice.")
+
+if "intro_seen" not in st.session_state:
+    st.session_state.intro_seen = False
+if not st.session_state.intro_seen:
+    st.markdown(
+        '<div class="is-intro"><b>New here?</b> Enter a ticker in the sidebar, then walk '
+        "the tabs in order: <b>Chart &amp; Trend</b> → <b>Valuation Lab</b> → "
+        "<b>Accumulation</b> → <b>Dislocation</b> → <b>Entry Planner</b>. "
+        "Everything is assumption-driven — change the inputs and watch the outputs move. "
+        "Built on free Yahoo Finance data: a starting point for your own research, not a verdict.</div>",
+        unsafe_allow_html=True,
+    )
+    if st.button("Got it — hide this", key="intro_dismiss"):
+        st.session_state.intro_seen = True
+        st.rerun()
 
 
 def fmt_money(x):
