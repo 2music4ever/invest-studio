@@ -309,3 +309,22 @@ def growth_chart(series: dict) -> go.Figure:
                       yaxis_title="Growth of $10,000",
                       legend=dict(orientation="h", y=1.08))
     return _apply(fig)
+
+
+def growth_valuation_scatter(df: pd.DataFrame) -> go.Figure:
+    """Growth vs valuation: X = forward P/E, Y = 1-yr forward consensus EPS growth %."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=df["forward_pe"], y=df["eps_cagr"] * 100,
+        mode="markers+text", text=df["ticker"], textposition="top center",
+        textfont=dict(size=12, color=INK),
+        marker=dict(color=GOLD, size=12, line=dict(color="#0B0E14", width=1.5)),
+        hovertemplate=("%{text}<br>Forward P/E %{x:.1f}"
+                       "<br>EPS growth (1Y fwd) %{y:.1f}%<extra></extra>"),
+    ))
+    fig.update_layout(template="plotly_dark", height=440,
+                      margin=dict(l=10, r=10, t=10, b=10),
+                      xaxis_title="Forward P/E",
+                      yaxis_title="Forward EPS growth, 1Y consensus %",
+                      showlegend=False)
+    return _apply(fig)

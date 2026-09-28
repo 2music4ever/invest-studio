@@ -218,6 +218,43 @@ def get_consensus_growth(ticker: str) -> dict:
 
 
 @st.cache_data(ttl=86400, show_spinner=False)
+def get_forward_eps_growth(ticker: str) -> float | None:
+    """1-yr forward consensus EPS growth: (+1y avg - 0y avg) / 0y avg from
+    Yahoo's eps_trend. None when estimates are missing or current-year EPS <= 0."""
+    t = yf.Ticker(ticker)
+    try:
+        et = _with_retry(lambda: t.eps_trend, tries=2)
+    except Exception:
+        return None
+    if et is None or et.empty or "current" not in et.columns:
+        return None
+    try:
+        e0 = float(et.loc["0y", "current"])
+        e1 = float(et.loc["+1y", "current"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if not (np.isfinite(e0) and np.isfinite(e1)) or e0 <= 0:
+        return None
+    return e1 / e0 - 1
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_growth_valuation(tickers: tuple) -> pd.DataFrame:
+    """Forward P/E + 1-yr forward consensus EPS growth per ticker for the
+    growth-vs-valuation scatter. Tickers missing either metric are left as
+    None so the UI can skip (not misplot) them."""
+    rows = []
+    for t in tickers:
+        snap = get_snapshot(t)
+        rows.append({
+            "ticker": t,
+            "forward_pe": snap.get("forward_pe"),
+            "eps_cagr": get_forward_eps_growth(t),
+        })
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
 def get_buyback_yield(ticker: str) -> dict:
     """Latest-annual share repurchases / market cap."""
     out = {"yield": 0.0, "amount": None, "year": None}

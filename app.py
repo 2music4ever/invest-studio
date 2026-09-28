@@ -819,3 +819,24 @@ with tabs[5]:
         if w_cur is not None:
             gseries["Current allocation"] = PF.growth(w_cur, rets)
         st.plotly_chart(charts.growth_chart(gseries), width="stretch")
+
+        st.markdown("#### Growth vs valuation")
+        with st.spinner("Loading forward P/E and consensus EPS growth…"):
+            gv = D.get_growth_valuation(tuple(tickers))
+        gv_ok = gv.dropna(subset=["forward_pe", "eps_cagr"])
+        gv_ok = gv_ok[gv_ok["forward_pe"] > 0].reset_index(drop=True)
+        if gv_ok.empty:
+            st.caption("No forward P/E / consensus EPS growth data available for these tickers right now.")
+        else:
+            st.plotly_chart(charts.growth_valuation_scatter(gv_ok), width="stretch")
+            skipped = sorted(set(tickers) - set(gv_ok["ticker"]))
+            if skipped:
+                st.caption(f"Skipped (missing forward P/E or consensus growth): {', '.join(skipped)}")
+            st.caption("X: forward P/E (Yahoo). Y: 1-yr forward consensus EPS growth "
+                       "(+1y vs current-year analyst EPS). Lower-left = cheaper for the growth; "
+                       "upper-left = the GARP sweet spot.")
+            gv_tbl = gv_ok[["ticker", "forward_pe", "eps_cagr"]].rename(
+                columns={"ticker": "Ticker", "forward_pe": "Forward P/E",
+                         "eps_cagr": "EPS growth 1Y"})
+            st.dataframe(gv_tbl.style.format({"Forward P/E": "{:.1f}", "EPS growth 1Y": "{:.1%}"}),
+                         width="stretch", hide_index=True)
