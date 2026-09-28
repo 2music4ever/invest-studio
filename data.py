@@ -226,7 +226,7 @@ def get_forward_eps_growth(ticker: str) -> float | None:
         et = _with_retry(lambda: t.eps_trend, tries=2)
     except Exception:
         return None
-    if et is None or et.empty or "current" not in et.columns:
+    if not isinstance(et, pd.DataFrame) or et.empty or "current" not in et.columns:
         return None
     try:
         e0 = float(et.loc["0y", "current"])
@@ -245,12 +245,16 @@ def get_growth_valuation(tickers: tuple) -> pd.DataFrame:
     None so the UI can skip (not misplot) them."""
     rows = []
     for t in tickers:
-        snap = get_snapshot(t)
-        rows.append({
-            "ticker": t,
-            "forward_pe": snap.get("forward_pe"),
-            "eps_cagr": get_forward_eps_growth(t),
-        })
+        try:
+            snap = get_snapshot(t)
+            rows.append({
+                "ticker": t,
+                "forward_pe": snap.get("forward_pe"),
+                "eps_cagr": get_forward_eps_growth(t),
+            })
+        except Exception:
+            # one bad ticker must not kill the whole section
+            rows.append({"ticker": t, "forward_pe": None, "eps_cagr": None})
     return pd.DataFrame(rows)
 
 
