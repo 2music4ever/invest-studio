@@ -5,11 +5,6 @@ and entry planning. Built for 1/3/5-year holds, not trading.
 
 ## Tabs
 
-- **One-Pager** — the whole thesis on one screen: header, 4 key metric cards,
-  18-month price chart with 21/50/200-day MAs, quarterly revenue & FCF bars,
-  peer comparison (auto-suggested, editable), latest-quarter metrics,
-  rule-based strengths/watch-outs, and the DCF / reverse-DCF / mid-cycle-exit
-  valuation trio.
 - **Chart & Trend** — price with 20/50/200-day and 50/200-week MAs, trend-regime
   badge, historical P/E percentile bands, key stats.
 - **Valuation Lab** — DCF builder with your assumptions (revenue growth, FCF
@@ -28,16 +23,6 @@ and entry planning. Built for 1/3/5-year holds, not trading.
 
 Yahoo Finance via `yfinance` (free, no key). P/E history blends annual EPS with
 recent TTM EPS — an approximation, shown as percentile bands.
-
-## Optional: Finnhub key for auto peer suggestions
-
-The One-Pager tab auto-suggests peers via Finnhub's free `/stock/peers` endpoint.
-Without a key the tab still works — you type peers manually.
-
-1. Get a free key at https://finnhub.io (free tier is enough).
-2. Locally: create `.streamlit/secrets.toml` (never commit it) with
-   `FINNHUB_KEY = "your_key"`.
-3. On Streamlit Cloud: app Settings → Secrets, add `FINNHUB_KEY = "your_key"`.
 
 ## Run locally
 
