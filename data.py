@@ -149,41 +149,78 @@ def get_annuals(ticker: str) -> dict:
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def get_fundamentals(ticker: str) -> dict:
-    """Latest-annual revenue, FCF, net debt, shares — prefilled DCF inputs."""
-    a = get_annuals(ticker)
-    inc, cf, bs = a["financials"], a["cashflow"], a["balance_sheet"]
-    rev = _row(inc, "total revenue")
-    ni = _row(inc, "net income")
-    ocf = _row(cf, "operating cash flow")
-    capex = _row(cf, "capital expenditure")
-    debt = _row(bs, "total debt")
-    cash = _row(bs, "cash and cash equivalents")
-    snap = get_snapshot(ticker)
+    """TTM revenue, FCF, net debt, shares — prefilled DCF inputs.
 
-    def latest(s):
-        if s is None or s.empty:
+    Two Yahoo quirks handled here:
+    - Multi-class issuers (GOOGL/GOOG): sharesOutstanding covers one class only.
+      marketCap/price sees the whole company, so when it implies materially more
+      shares we use the implied figure.
+    - totalCash includes short-term investments; the balance-sheet
+      "cash and cash equivalents" row alone understates cash-rich balance sheets.
+    Falls back to latest-annual statements when quarterlies are unavailable.
+    """
+    t = yf.Ticker(ticker)
+    q = {}
+    for attr in ("quarterly_financials", "quarterly_cashflow"):
+        try:
+            q[attr] = _flatten(_with_retry(lambda a=attr: getattr(t, a).copy(), tries=2))
+        except Exception:
+            q[attr] = pd.DataFrame()
+
+    def ttm(df, *names):
+        s = _row(df, *names)
+        if s is None:
             return None
-        s = s.dropna()
-        return float(s.iloc[0]) if not s.empty else None
+        if isinstance(s, pd.DataFrame):
+            s = s.iloc[0]
+        try:
+            order = pd.to_datetime(s.index, errors="coerce")
+            s = s.iloc[pd.Series(range(len(s)), index=s.index)
+                       .assign(_o=order.values).sort_values("_o", ascending=False).index]
+        except Exception:
+            pass
+        vals = pd.to_numeric(s.iloc[:4], errors="coerce").dropna()
+        return float(vals.sum()) if len(vals) == 4 else None
+    revenue = ttm(q["quarterly_financials"], "total revenue")
+    ocf_v = ttm(q["quarterly_cashflow"], "operating cash flow")
+    capex_v = ttm(q["quarterly_cashflow"], "capital expenditure")
+    fcf = None
+    if ocf_v is not None and capex_v is not None:
+        # capex prints negative in Yahoo statements; guard both conventions
+        fcf = ocf_v + capex_v if capex_v <= 0 else ocf_v - capex_v
 
-    revenue = latest(rev)
-    ocf_v, capex_v = latest(ocf), latest(capex)
-    fcf = (ocf_v + capex_v) if (ocf_v is not None and capex_v is not None) else None
-    # capex prints negative in Yahoo statements; guard both conventions
-    if fcf is not None and capex_v is not None and capex_v > 0 and ocf_v is not None:
-        fcf = ocf_v - capex_v
-    debt_v, cash_v = latest(debt), latest(cash)
+    if revenue is None:  # quarterlies unavailable — fall back to latest annual
+        a = get_annuals(ticker)
+        inc, cf = a["financials"], a["cashflow"]
+
+        def latest(s):
+            if s is None or (hasattr(s, "empty") and s.empty):
+                return None
+            s = s.dropna()
+            return float(s.iloc[0]) if not s.empty else None
+
+        revenue = latest(_row(inc, "total revenue"))
+        ocf_v = latest(_row(cf, "operating cash flow"))
+        capex_v = latest(_row(cf, "capital expenditure"))
+        if ocf_v is not None and capex_v is not None:
+            fcf = ocf_v + capex_v if capex_v <= 0 else ocf_v - capex_v
+
+    snap = get_snapshot(ticker)
+    shares = snap.get("shares")
+    mcap, px = snap.get("market_cap"), snap.get("price")
+    if shares and mcap and px and px > 0 and mcap / px > 1.3 * shares:
+        shares = mcap / px
+    debt_v, cash_v = snap.get("total_debt"), snap.get("total_cash")
     net_debt = (debt_v - cash_v) if (debt_v is not None and cash_v is not None) else None
-    ni_v = latest(ni)
     fcf_margin = (fcf / revenue) if (fcf and revenue) else None
     return {
         "revenue": revenue,
         "fcf": fcf,
         "fcf_margin": fcf_margin,
-        "net_income": ni_v,
-        "net_margin": (ni_v / revenue) if (ni_v and revenue) else None,
-        "net_debt": net_debt if net_debt is not None else snap.get("total_debt"),
-        "shares": snap.get("shares"),
+        "net_income": None,
+        "net_margin": None,
+        "net_debt": net_debt,
+        "shares": shares,
     }
 
 

@@ -402,6 +402,13 @@ with tabs[1]:
                 if impl_early is None:
                     st.info("No sane yrs 1–5 growth rate reconciles your yrs 6–10 input with the "
                             "current price — the price is outside what any −5%…+60% early growth can justify.")
+                elif impl_early < 0:
+                    st.markdown(
+                        f"With yrs 6–10 growth fixed at **{g2 * 100:.1f}%**, your late-stage assumption "
+                        f"alone justifies more than the current **{fmt_money(price)}** — the solver has to "
+                        f"push yrs 1–5 growth negative (**{impl_early * 100:.1f}%**) to bring the value back "
+                        f"down. In plain terms: the market is pricing in *less* growth than your yrs 6–10 "
+                        f"input, so disagree with the market on the far future first, not the near term.")
                 else:
                     st.markdown(
                         f"With yrs 6–10 growth fixed at **{g2 * 100:.1f}%**, the price of "
