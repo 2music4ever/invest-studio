@@ -9,6 +9,14 @@ import portfolio as PF
 import technical as T
 import valuation as V
 
+import importlib
+# Streamlit Cloud reruns app.py in the SAME process after a git push, so
+# imported local modules would otherwise stay stale (new app.py + old
+# charts.py = AttributeError). Reload them so module edits take effect
+# without a manual app reboot.
+for _mod in (charts, D, PF, T, V):
+    importlib.reload(_mod)
+
 st.set_page_config(page_title="Invest Studio", page_icon="assets/favicon.png", layout="wide")
 
 # ---------- professional chrome: typography, theme, hide Streamlit branding ----------
