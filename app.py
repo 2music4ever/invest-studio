@@ -89,10 +89,10 @@ if "intro_seen" not in st.session_state:
     st.session_state.intro_seen = False
 if not st.session_state.intro_seen:
     st.markdown(
-        '<div class="is-intro"><b>New here?</b> Enter a ticker below. <b>One-Pager</b> '
-        "summarizes it on one screen; then walk the deep dives in order: "
+        '<div class="is-intro"><b>New here?</b> Enter a ticker below, then walk the deep dives in order: '
         "<b>Chart &amp; Trend</b> → <b>Valuation Lab</b> → "
         "<b>Accumulation</b> → <b>Dislocation</b> → <b>Entry Planner</b>. "
+        "<b>One-Pager</b> summarizes the whole thesis on one screen. "
         "The <b>Portfolio</b> tab optimizes across many tickers at once "
         "(mean-variance, Sortino, min drawdown) with its own ticker list. "
         "Everything is assumption-driven — change the inputs and watch the outputs move. "
@@ -146,11 +146,11 @@ px = T.add_trend(px)
 last = px.iloc[-1]
 regime_text, regime_color = T.regime(price, last.get("WMA50", np.nan), last.get("WMA200", np.nan))
 
-tabs = st.tabs(["One-Pager", "Chart & Trend", "Valuation Lab", "Accumulation",
-                "Dislocation", "Entry Planner", "Portfolio"])
+tabs = st.tabs(["Chart & Trend", "Valuation Lab", "Accumulation",
+                "Dislocation", "Entry Planner", "Portfolio", "One-Pager"])
 
-# ================= TAB 1 — ONE-PAGER =================
-with tabs[0]:
+# ================= TAB 7 — ONE-PAGER =================
+with tabs[6]:
     st.subheader("One-Pager — the whole thesis on one screen")
     st.caption("Snapshot summary for the ticker above. Valuations reuse your Valuation Lab "
                "defaults; the Strengths / Watch-outs are rule-based flags from the data, not analysis.")
@@ -380,8 +380,8 @@ with tabs[0]:
     else:
         v3.metric("Exit-implied value", "n/a")
 
-# ================= TAB 2 — CHART & TREND =================
-with tabs[1]:
+# ================= TAB 1 — CHART & TREND =================
+with tabs[0]:
     st.subheader(f"{snap['name']} ({ticker})")
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Price", fmt_money(price))
@@ -493,8 +493,8 @@ with tabs[1]:
                    "Yahoo's free tier carries (about 4 years). Margins are period ratios; "
                    "price is the period-end close (TTM pairs with the latest close).")
 
-# ================= TAB 3 — VALUATION LAB =================
-with tabs[2]:
+# ================= TAB 2 — VALUATION LAB =================
+with tabs[1]:
     st.subheader("DCF valuation — your assumptions drive the value")
     rev0 = fund["revenue"]
     shares0 = fund["shares"]
@@ -731,8 +731,8 @@ with tabs[2]:
     except ValueError as e:
         st.error(str(e))
 
-# ================= TAB 4 — ACCUMULATION =================
-with tabs[3]:
+# ================= TAB 3 — ACCUMULATION =================
+with tabs[2]:
     st.subheader("Institutional footprint")
     prof = T.vpvr(px)
     poc = float(prof["poc"].iloc[0])
@@ -757,8 +757,8 @@ with tabs[3]:
                 f"**CMF(60):** {cmf60_now:+.2f}" if cmf60_now is not None else "" +
                 " — sustained positive = quiet accumulation.")
 
-# ================= TAB 5 — DISLOCATION =================
-with tabs[4]:
+# ================= TAB 4 — DISLOCATION =================
+with tabs[3]:
     st.subheader("Estimates vs price — the dislocation tracker")
     an = D.get_analyst(ticker)
     tgt = an.get("analyst_price_targets")
@@ -841,8 +841,8 @@ with tabs[4]:
         st.caption(f"Sector benchmark: {sec_sym} ({snap['sector'] or 'sector unknown'}). "
                    "A rising line while price consolidates = institutional demand absorbing supply.")
 
-# ================= TAB 6 — ENTRY PLANNER =================
-with tabs[5]:
+# ================= TAB 5 — ENTRY PLANNER =================
+with tabs[4]:
     st.subheader("Risk-managed entry & scaling")
     prof = T.vpvr(px)
     poc = float(prof["poc"].iloc[0])
@@ -921,8 +921,8 @@ _For education and research only — not investment advice._
     st.download_button("Download research note (.md)", report,
                        file_name=f"{ticker}_research_note.md")
 
-# ================= TAB 7 — PORTFOLIO =================
-with tabs[6]:
+# ================= TAB 6 — PORTFOLIO =================
+with tabs[5]:
     st.subheader("Portfolio optimization")
     st.caption("Mean-variance, max Sortino, and min max-drawdown — up to 30 tickers. "
                "Backward-looking: it optimizes on historical returns, so treat the output "
