@@ -107,6 +107,7 @@ def get_snapshot(ticker: str) -> dict:
         "ev_ebitda": pick("enterpriseToEbitda"),
         "profit_margin": pick("profitMargins"),
         "op_margin": pick("operatingMargins"),
+        "gross_margin": pick("grossMargins"),
         "roe": pick("returnOnEquity"),
         "fcf": pick("freeCashflow"),
         "total_debt": pick("totalDebt"),
@@ -496,3 +497,92 @@ def sector_benchmark(sector: str | None) -> str:
     if sector and sector in SECTOR_ETF:
         return SECTOR_ETF[sector]
     return "XLC"
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_quarterly(ticker: str) -> pd.DataFrame:
+    """Last 8 fiscal quarters: revenue, gross profit, FCF, net cash.
+
+    Index: quarter-end dates (ascending). FCF = operating cash flow - capex
+    (capex may print positive or negative in Yahoo statements — the abs()
+    guard handles both). Missing pieces come back as NaN; callers decide
+    what to show rather than this raising.
+    """
+    t = yf.Ticker(ticker)
+
+    def _q(attr):
+        try:
+            return _flatten(_with_retry(lambda a=attr: getattr(t, a).copy(), tries=2))
+        except Exception:
+            return pd.DataFrame()
+
+    q_inc = _q("quarterly_financials")
+    q_cf = _q("quarterly_cashflow")
+    q_bs = _q("quarterly_balance_sheet")
+    rev = _row(q_inc, "total revenue")
+    gro = _row(q_inc, "gross profit")
+    ocf = _row(q_cf, "operating cash flow")
+    capex = _row(q_cf, "capital expenditure")
+    debt = _row(q_bs, "total debt")
+    cash = _row(q_bs, "cash and cash equivalents")
+
+    def _ser(s):
+        if s is None:
+            return pd.Series(dtype=float)
+        s = s.dropna()
+        if s.empty:
+            return pd.Series(dtype=float)
+        try:
+            idx = pd.to_datetime(s.index)
+        except Exception:
+            return pd.Series(dtype=float)
+        out = pd.Series(s.to_numpy(dtype=float), index=idx).sort_index()
+        if getattr(out.index, "tz", None) is not None:
+            out.index = out.index.tz_localize(None)
+        return out
+
+    rev_s, gro_s = _ser(rev), _ser(gro)
+    ocf_s, cpx_s = _ser(ocf), _ser(capex)
+    debt_s, cash_s = _ser(debt), _ser(cash)
+    fcf_s = ocf_s - cpx_s.abs()
+    netcash_s = cash_s - debt_s
+
+    idx = rev_s.index
+    for s in (gro_s, fcf_s, netcash_s):
+        idx = idx.union(s.index)
+    qdf = pd.DataFrame(index=sorted(idx))
+    qdf["revenue"] = rev_s
+    qdf["gross"] = gro_s
+    qdf["fcf"] = fcf_s
+    qdf["net_cash"] = netcash_s
+    return qdf.sort_index().iloc[-8:]
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_finnhub_peers(ticker: str) -> dict:
+    """Auto peer suggestions via Finnhub's /stock/peers endpoint.
+
+    Returns {'peers': [...up to 5, self excluded...], 'note': 'ok'|'no_key'|'empty'|'error'}.
+    Never raises: without a FINNHUB_KEY secret (or on any failure) it returns an
+    empty list so the UI falls back to manual peer entry.
+    """
+    try:
+        key = st.secrets.get("FINNHUB_KEY")
+    except Exception:
+        key = None
+    if not key:
+        return {"peers": [], "note": "no_key"}
+    import json as _json
+    import urllib.parse
+    import urllib.request
+    url = ("https://finnhub.io/api/v1/stock/peers?symbol="
+           + urllib.parse.quote(ticker) + "&token=" + urllib.parse.quote(str(key)))
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "invest-studio"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = _json.loads(r.read().decode("utf-8"))
+        peers = [p for p in (data or [])
+                 if isinstance(p, str) and p.upper() != ticker.upper()][:5]
+        return {"peers": peers, "note": "ok" if peers else "empty"}
+    except Exception:
+        return {"peers": [], "note": "error"}
