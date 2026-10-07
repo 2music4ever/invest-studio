@@ -71,6 +71,31 @@ def reverse_dcf(price: float, revenue0: float, fcf_margin: float,
     return (lo + hi) / 2
 
 
+def reverse_dcf_split(price: float, revenue0: float, g_late: float, fcf_margin: float,
+                      discount: float, terminal_g: float, net_debt: float,
+                      shares: float, lo: float = -0.05, hi: float = 0.60,
+                      fcf_margin_norm: float | None = None, norm_years: int = 5):
+    """Implied yrs-1-5 growth given a fixed yrs-6-10 growth. None if unsolvable."""
+    def value_at(g):
+        try:
+            v, _, _ = dcf(revenue0, g, g_late, fcf_margin, discount,
+                          terminal_g, net_debt, shares,
+                          fcf_margin_norm=fcf_margin_norm, norm_years=norm_years)
+            return v
+        except ValueError:
+            return np.nan
+    vlo, vhi = value_at(lo), value_at(hi)
+    if not (np.isfinite(vlo) and np.isfinite(vhi)) or not (vlo <= price <= vhi):
+        return None
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if value_at(mid) < price:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
 def margin_of_safety(iv: float, price: float) -> float | None:
     if not iv or iv <= 0 or not price:
         return None

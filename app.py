@@ -390,6 +390,26 @@ with tabs[1]:
                         f"**{g_base_equiv * 100:.1f}%** annualized over 10 years — "
                         + ("the market is pricing in more growth than you expect." if implied > g_base_equiv
                            else "the market is pricing in less growth than you expect."))
+            split_on = st.checkbox(
+                "Solve with my yrs 6–10 growth fixed",
+                value=False, key="rev_split",
+                help="Instead of one flat 10-year rate: hold your yrs 6–10 growth input fixed "
+                     "and solve for the yrs 1–5 growth the current price demands.")
+            if split_on:
+                impl_early = V.reverse_dcf_split(price, revenue, g2, fcf_m, disc, tg,
+                                                 net_debt, shares,
+                                                 fcf_margin_norm=fcf_norm, norm_years=norm_yrs)
+                if impl_early is None:
+                    st.info("No sane yrs 1–5 growth rate reconciles your yrs 6–10 input with the "
+                            "current price — the price is outside what any −5%…+60% early growth can justify.")
+                else:
+                    st.markdown(
+                        f"With yrs 6–10 growth fixed at **{g2 * 100:.1f}%**, the price of "
+                        f"**{fmt_money(price)}** implies **{impl_early * 100:.1f}%** annual revenue "
+                        f"growth in yrs 1–5 (your input: **{g1 * 100:.1f}%**) — "
+                        + ("the market demands faster early growth than you expect."
+                           if impl_early > g1
+                           else "the market is pricing slower early growth than you expect."))
 
         with st.expander("Year-by-year DCF schedule"):
             show = sched.copy()
