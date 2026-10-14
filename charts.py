@@ -328,3 +328,29 @@ def growth_valuation_scatter(df: pd.DataFrame) -> go.Figure:
                       yaxis_title="Forward EPS growth, 1Y consensus %",
                       showlegend=False)
     return _apply(fig)
+
+
+def drawdown_chart(dd: pd.Series) -> go.Figure:
+    """Underwater chart: drawdown % over time with trough marker."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=dd.index, y=dd.values, mode="lines", name="Drawdown",
+        line=dict(color=RED, width=1.6),
+        fill="tozeroy", fillcolor="rgba(229,84,74,0.22)",
+        hovertemplate="%{x|%Y-%m-%d}: %{y:.1f}%<extra></extra>"))
+    t = dd.idxmin()
+    fig.add_trace(go.Scatter(
+        x=[t], y=[float(dd.min())], mode="markers", name="Deepest",
+        marker=dict(color=AMBER, size=10, line=dict(color="#0B0E14", width=1.5)),
+        hovertemplate="Deepest %{y:.1f}%<br>%{x|%Y-%m-%d}<extra></extra>"))
+    cur = float(dd.iloc[-1])
+    fig.add_hline(y=cur, line_dash="dash", line_color=GRAY, line_width=1,
+                  annotation_text=f"Now {cur:.1f}%",
+                  annotation_font=dict(size=11, color=GRAY))
+    fig.update_layout(template="plotly_dark", height=360,
+                      margin=dict(l=10, r=10, t=10, b=10),
+                      title="Drawdown — last 5 years",
+                      yaxis=dict(ticksuffix="%", title="Underwater %"),
+                      legend=dict(orientation="h", y=1.08),
+                      showlegend=False)
+    return _apply(fig)

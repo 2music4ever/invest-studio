@@ -696,6 +696,25 @@ with tabs[4]:
     st.caption("Worst rolling buy-and-hold returns over the available history. "
                "If the worst 5-year hold is negative, size the position for capital lockup.")
 
+    st.markdown("#### Drawdown chart — last 5 years")
+    cutoff = px.index[-1] - pd.DateOffset(years=5)
+    close5 = px["Close"][px.index >= cutoff]
+    dd5 = (close5 / close5.cummax() - 1) * 100
+    st.plotly_chart(charts.drawdown_chart(dd5), width="stretch")
+    eps = T.drawdown_episodes(close5)
+    if not eps.empty:
+        disp = eps.copy()
+        for col in ("Peak", "Trough", "Recovered"):
+            disp[col] = disp[col].map(
+                lambda d: d.strftime("%Y-%m-%d") if pd.notna(d) else "underwater")
+        disp["Depth %"] = disp["Depth %"].map("{:.1f}%".format)
+        disp["Peak→recovery (days)"] = disp["Peak→recovery (days)"].map(
+            lambda d: f"{int(d):,}" if pd.notna(d) else "—")
+        st.dataframe(disp, width="stretch", hide_index=True)
+    else:
+        st.caption("No drawdowns deeper than 5% in the last 5 years.")
+    st.caption("Episodes of ≥5% peak-to-trough decline. 'Underwater' = not yet recovered to the prior peak.")
+
     st.markdown("#### Export")
     mos_now = V.margin_of_safety(st.session_state.get("base_iv") or 0, price)
     report = f"""# Invest Studio — {ticker} ({snap['name']})

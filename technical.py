@@ -193,3 +193,53 @@ def wyckoff_flags(df: pd.DataFrame) -> list[dict]:
     # keep only recent 12 months of flags, newest last
     cutoff = d.index[-1] - pd.Timedelta(days=365)
     return [f for f in flags if f["date"] >= cutoff][-12:]
+
+
+def drawdown_episodes(close: pd.Series, min_depth: float = 0.05) -> pd.DataFrame:
+    """Drawdown episodes of at least min_depth (fraction), peak-to-recovery.
+
+    Each row: peak date, trough date, depth %, peak->trough days,
+    recovery date (None if still underwater), peak->recovery days.
+    Sorted deepest first.
+    """
+    c = close.dropna()
+    n = len(c)
+    if n < 2:
+        return pd.DataFrame()
+    idx = c.index
+    vals = c.values
+    run_max = np.maximum.accumulate(vals)
+    rows = []
+    i = 0
+    while i < n:
+        dd_i = vals[i] / run_max[i] - 1
+        if dd_i <= -min_depth:
+            peak_val = run_max[i]
+            peak_locs = np.where(vals[: i + 1] == peak_val)[0]
+            peak_i = int(peak_locs[-1])
+            trough_i, min_dd, recovered = i, dd_i, None
+            j = i + 1
+            while j < n:
+                if vals[j] >= peak_val:
+                    recovered = j
+                    break
+                d = vals[j] / peak_val - 1
+                if d < min_dd:
+                    min_dd, trough_i = d, j
+                j += 1
+            rows.append({
+                "Peak": idx[peak_i].date(),
+                "Trough": idx[trough_i].date(),
+                "Depth %": min_dd * 100,
+                "Peak→trough (days)": (idx[trough_i] - idx[peak_i]).days,
+                "Recovered": idx[recovered].date() if recovered is not None else None,
+                "Peak→recovery (days)": (idx[recovered] - idx[peak_i]).days
+                if recovered is not None else None,
+            })
+            i = (recovered + 1) if recovered is not None else n
+        else:
+            i += 1
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df = df.sort_values("Depth %").reset_index(drop=True)
+    return df
