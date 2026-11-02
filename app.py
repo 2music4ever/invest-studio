@@ -905,7 +905,9 @@ with tabs[6]:
                "targets for every name — so each valuation method can be compared "
                "with the Street's. Gap to consensus is green when the price sits "
                "below the target (upside to target), red when above it. "
-               "Priced-in growth figures are stored reverse-DCF values at the anchor price shown.")
+               "Priced-in growth figures are stored reverse-DCF values at the anchor price shown. "
+               "The VC exit-value group applies one uniform method to every name, so those "
+               "columns never blank — including a VC priced-in growth solved at today's price.")
     if st.button("Refresh data", key="matrix_refresh"):
         st.cache_data.clear()
         st.rerun()
@@ -958,14 +960,28 @@ with tabs[6]:
                + (f" + {len(_extras)} added." if _extras else ".")
                + " Added names are per-session — they don't change the default for anyone else.")
 
+    # VC-method assumptions: one uniform method for every name, so no blanks.
+    # Exit EV = revenue grown at the clipped Yahoo growth rate for N years,
+    # times an exit EV/Sales multiple, discounted at the hurdle, plus net cash.
+    st.markdown("**VC exit-value assumptions** (same for every name — tune them and the whole column moves)")
+    _v1, _v2, _v3 = st.columns(3)
+    with _v1:
+        _vc_years = st.selectbox("Exit horizon (years)", [3, 5, 7, 10], index=1, key="matrix_vc_years")
+    with _v2:
+        _vc_mult = st.slider("Exit EV/Sales", 2.0, 12.0, 5.0, 0.5, key="matrix_vc_mult")
+    with _v3:
+        _vc_hurdle = st.slider("Hurdle rate", 0.08, 0.15, 0.10, 0.01, key="matrix_vc_hurdle",
+                               format="%.0f%%")
+
     _groups = st.multiselect("Metric groups", list(MX.GROUPS.keys()),
                              default=list(MX.GROUPS.keys()), key="matrix_groups")
     _cols = ["Ticker", "Name"] + [c for g in _groups for c in MX.GROUPS[g]]
     _c1, _c2 = st.columns(2)
     with _c1:
-        _sort_col = st.selectbox("Sort by", ["Gap to consensus %", "Price", "Day %",
+        _sort_col = st.selectbox("Sort by", ["Gap to consensus %", "VC upside %",
+                                             "VC priced-in growth %", "Price", "Day %",
                                              "Market cap ($B)",
-                                             "Fwd P/E", "Rev growth %"],
+                                             "Fwd P/E", "Rev growth % (Q YoY)"],
                                  key="matrix_sort")
     with _c2:
         _ascending = st.checkbox("Ascending (cheapest first)", value=True, key="matrix_asc")
@@ -976,6 +992,15 @@ with tabs[6]:
     _mdf = MX.build_matrix(_tickers, on_progress=_prog)
     _bar.empty()
 
+    # VC columns from the slider assumptions (pure arithmetic on fetched inputs — instant).
+    _mdf["VC exit value"] = MX.vc_exit_value(
+        _mdf["Revenue ($B)"], _mdf["Growth used %"], _mdf["Shares (B)"],
+        _mdf["Net cash ($B)"], _vc_years, _vc_mult, _vc_hurdle)
+    _mdf["VC upside %"] = _mdf["VC exit value"] / _mdf["Price"] - 1
+    _mdf["VC priced-in growth %"] = MX.vc_priced_in_growth(
+        _mdf["Price"], _mdf["Revenue ($B)"], _mdf["Shares (B)"],
+        _mdf["Net cash ($B)"], _vc_years, _vc_mult, _vc_hurdle)
+
     _view = _mdf[[c for c in _cols if c in _mdf.columns]]
     if _sort_col in _view.columns:
         _view = _view.sort_values(_sort_col, ascending=_ascending, na_position="last")
@@ -984,6 +1009,15 @@ with tabs[6]:
                        _view.to_csv(index=False).encode("utf-8"),
                        file_name="invest-studio-matrix.csv", mime="text/csv",
                        key="matrix_csv")
-    st.caption("SPCX market cap uses 13.58B total shares (Yahoo reports one class only). "
+    st.caption("SPCX market cap and shares use 13.58B total shares (Yahoo reports one class only). "
+               "Non-USD reporters (TSM in TWD) are converted at Yahoo's FX rate, with "
+               "market-cap-implied ADR shares. "
                "Next-earnings dates are best-effort from Yahoo's calendar and may be blank. "
-               "Yahoo consensus targets and multiples can lag — treat as a starting point, not a verdict.")
+               "VC method: revenue grown at Yahoo YoY revenue growth clipped to 0–30% "
+               "(10% when Yahoo lacks it), exit EV/Sales and hurdle from the sliders above, "
+               "plus today's net cash. One multiple for every name is crude by design — "
+               "a pharma name and a chip name don't deserve the same exit multiple — "
+               "so use VC columns for ranking, not precision; the DCF stacks remain the "
+               "real numbers where they exist. VC priced-in growth solves that same "
+               "equation backwards at today's price. Yahoo consensus targets and multiples "
+               "can lag — treat as a starting point, not a verdict.")
