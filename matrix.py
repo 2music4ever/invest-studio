@@ -81,12 +81,15 @@ def _num(x):
     return v if np.isfinite(v) else np.nan
 
 
-def build_matrix(on_progress=None) -> pd.DataFrame:
-    """One row per MATRIX_TICKERS name. on_progress(i, n, ticker) for a progress bar."""
+def build_matrix(tickers=None, on_progress=None) -> pd.DataFrame:
+    """One row per ticker. Defaults to MATRIX_TICKERS (the user's book names).
+    on_progress(i, n, ticker) drives a progress bar. Unknown tickers still get
+    a row with blank metrics rather than breaking the table."""
+    tickers = list(tickers) if tickers else list(MATRIX_TICKERS)
     rows = []
-    for i, tk in enumerate(MATRIX_TICKERS):
+    for i, tk in enumerate(tickers):
         if on_progress is not None:
-            on_progress(i, len(MATRIX_TICKERS), tk)
+            on_progress(i, len(tickers), tk)
         snap = D.get_snapshot(tk) or {}
         ex = _extra(tk)
         price = _num(snap.get("price"))
@@ -128,7 +131,7 @@ def build_matrix(on_progress=None) -> pd.DataFrame:
             "Next earnings": ex["next_earnings"] or np.nan,
         })
     if on_progress is not None:
-        on_progress(len(MATRIX_TICKERS), len(MATRIX_TICKERS), "done")
+        on_progress(len(tickers), len(tickers), "done")
     cols = ["Ticker", "Name"] + [c for grp in GROUPS.values() for c in grp]
     return pd.DataFrame(rows, columns=cols)
 

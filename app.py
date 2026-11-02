@@ -910,6 +910,54 @@ with tabs[6]:
         st.cache_data.clear()
         st.rerun()
 
+    # Ticker entry: defaults are the user's book names; anyone viewing the app
+    # can add tickers for this session only (session state, not shared).
+    # Callbacks run before the script body, so clearing the input here is safe.
+    if "matrix_extra" not in st.session_state:
+        st.session_state.matrix_extra = []
+
+    def _matrix_add():
+        import re as _re
+        _txt = st.session_state.get("matrix_add_input", "")
+        _new = [_re.sub(r"[^A-Z0-9.\-]", "", t.strip().upper())
+                for t in _txt.split(",")]
+        _new = [t for t in _new if t and t not in MX.MATRIX_TICKERS
+                and t not in st.session_state.matrix_extra]
+        st.session_state.matrix_extra = (
+            st.session_state.matrix_extra + _new)[:22]  # cap: 40 names total
+        st.session_state.matrix_add_input = ""
+
+    def _matrix_reset():
+        st.session_state.matrix_extra = []
+
+    _e1, _e2, _e3 = st.columns([3, 1, 1])
+    with _e1:
+        st.text_input("Add tickers to compare",
+                      placeholder="e.g. COHR, LITE, RKLB",
+                      key="matrix_add_input")
+    with _e2:
+        st.write("")
+        st.button("Add", key="matrix_add_btn", on_click=_matrix_add)
+    with _e3:
+        st.write("")
+        st.button("Reset to my stocks", key="matrix_reset_btn", on_click=_matrix_reset)
+    _extras = st.session_state.matrix_extra
+    if _extras:
+        st.caption("Added for this session (click ✕ to remove):")
+        _chunks = [_extras[i:i + 8] for i in range(0, len(_extras), 8)]
+        for _chunk in _chunks:
+            _cols = st.columns(len(_chunk))
+            for _col, _tk in zip(_cols, _chunk):
+                with _col:
+                    if st.button(f"✕ {_tk}", key=f"matrix_rm_{_tk}"):
+                        st.session_state.matrix_extra = [
+                            t for t in st.session_state.matrix_extra if t != _tk]
+                        st.rerun()
+    _tickers = list(MX.MATRIX_TICKERS) + _extras
+    st.caption(f"Showing {len(_tickers)} names: your {len(MX.MATRIX_TICKERS)} book names"
+               + (f" + {len(_extras)} added." if _extras else ".")
+               + " Added names are per-session — they don't change the default for anyone else.")
+
     _groups = st.multiselect("Metric groups", list(MX.GROUPS.keys()),
                              default=list(MX.GROUPS.keys()), key="matrix_groups")
     _cols = ["Ticker", "Name"] + [c for g in _groups for c in MX.GROUPS[g]]
@@ -925,7 +973,7 @@ with tabs[6]:
     _bar = st.progress(0, text="Loading matrix…")
     def _prog(i, n, tk):
         _bar.progress(i / n if n else 1, text=f"Loading {tk}…" if tk != "done" else "Done")
-    _mdf = MX.build_matrix(on_progress=_prog)
+    _mdf = MX.build_matrix(_tickers, on_progress=_prog)
     _bar.empty()
 
     _view = _mdf[[c for c in _cols if c in _mdf.columns]]
