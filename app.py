@@ -8,13 +8,14 @@ import data as D
 import portfolio as PF
 import technical as T
 import valuation as V
+import matrix as MX
 
 import importlib
 # Streamlit Cloud reruns app.py in the SAME process after a git push, so
 # imported local modules would otherwise stay stale (new app.py + old
 # charts.py = AttributeError). Reload them so module edits take effect
 # without a manual app reboot.
-for _mod in (charts, D, PF, T, V):
+for _mod in (charts, D, PF, T, V, MX):
     importlib.reload(_mod)
 
 st.set_page_config(page_title="Invest Studio", page_icon="assets/favicon.png", layout="wide")
@@ -102,6 +103,7 @@ if not st.session_state.intro_seen:
         "<b>Accumulation</b> → <b>Dislocation</b> → <b>Entry Planner</b>. "
         "The <b>Portfolio</b> tab optimizes across many tickers at once "
         "(mean-variance, Sortino, min drawdown) with its own ticker list. "
+        "The <b>Matrix</b> tab compares all book names side by side across metrics. "
         "Everything is assumption-driven — change the inputs and watch the outputs move. "
         "Built on free Yahoo Finance data: a starting point for your own research, not a verdict.</div>",
         unsafe_allow_html=True,
@@ -154,7 +156,7 @@ last = px.iloc[-1]
 regime_text, regime_color = T.regime(price, last.get("WMA50", np.nan), last.get("WMA200", np.nan))
 
 tabs = st.tabs(["Chart & Trend", "Valuation Lab", "Accumulation",
-                "Dislocation", "Entry Planner", "Portfolio"])
+                "Dislocation", "Entry Planner", "Portfolio", "Matrix"])
 
 # ================= TAB 1 — CHART & TREND =================
 with tabs[0]:
@@ -894,3 +896,48 @@ with tabs[5]:
                          "eps_cagr": "EPS growth 1Y"})
             st.dataframe(gv_tbl.style.format({"Forward P/E": "{:.1f}", "EPS growth 1Y": "{:.1%}"}),
                          width="stretch", hide_index=True)
+
+# ================= TAB 7 — MATRIX =================
+with tabs[6]:
+    st.subheader("Matrix — all names, one table")
+    st.caption("Live Yahoo metrics (cached 1 hour) against your adopted bases. "
+               "Gap to base is green below base, red above; gap to consensus is the reverse. "
+               "Bases are your adopted Oct 27–28 decisions — a blank base means no adopted base, not zero. "
+               "Priced-in growth figures are stored reverse-DCF values at the anchor price shown.")
+    if st.button("Refresh data", key="matrix_refresh"):
+        st.cache_data.clear()
+        st.rerun()
+
+    _groups = st.multiselect("Metric groups", list(MX.GROUPS.keys()),
+                             default=list(MX.GROUPS.keys()), key="matrix_groups")
+    _cols = ["Ticker", "Name"] + [c for g in _groups for c in MX.GROUPS[g]]
+    _c1, _c2, _c3 = st.columns(3)
+    with _c1:
+        _below_only = st.checkbox("Only names below base", value=False, key="matrix_below")
+    with _c2:
+        _sort_col = st.selectbox("Sort by", ["Gap to base %", "Price", "Day %",
+                                             "Gap to consensus %", "Market cap ($B)",
+                                             "Fwd P/E", "Rev growth %"],
+                                 key="matrix_sort")
+    with _c3:
+        _ascending = st.checkbox("Ascending (cheapest first)", value=True, key="matrix_asc")
+
+    _bar = st.progress(0, text="Loading matrix…")
+    def _prog(i, n, tk):
+        _bar.progress(i / n if n else 1, text=f"Loading {tk}…" if tk != "done" else "Done")
+    _mdf = MX.build_matrix(on_progress=_prog)
+    _bar.empty()
+
+    if _below_only:
+        _mdf = _mdf[_mdf["Gap to base %"] < 0]
+    _view = _mdf[[c for c in _cols if c in _mdf.columns]]
+    if _sort_col in _view.columns:
+        _view = _view.sort_values(_sort_col, ascending=_ascending, na_position="last")
+    st.dataframe(MX.style_matrix(_view), width="stretch", hide_index=True)
+    st.download_button("Download this view as CSV",
+                       _view.to_csv(index=False).encode("utf-8"),
+                       file_name="invest-studio-matrix.csv", mime="text/csv",
+                       key="matrix_csv")
+    st.caption("SPCX market cap uses 13.58B total shares (Yahoo reports one class only). "
+               "Next-earnings dates are best-effort from Yahoo's calendar and may be blank. "
+               "Yahoo consensus targets and multiples can lag — treat as a starting point, not a verdict.")
