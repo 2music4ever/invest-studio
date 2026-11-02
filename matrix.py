@@ -68,6 +68,35 @@ PRICED_IN = {
     "MU": ("8.4% @ $839", 839.0),
 }
 
+# Base-case DCF assumptions behind the DCF base column, in MATRIX_TICKERS order:
+# (growth yrs 1–5, growth yrs 6–10, TTM FCF margin, normalized FCF margin).
+# Uniform for every name: 10% hurdle, 3% terminal growth, 5-yr margin convergence.
+# TTM margin is the lab's quarterly-sum FCF margin, except GOOGL (maintenance-capex
+# margin 24.2%; trough total-capex margin is 4.2%) and SPCX (TTM margin deeply
+# negative on peak capex, converging to norm over 5 yrs). NVDA/AMD paths were
+# reconstructed Nov 2 — each reproduces its displayed base exactly (NVDA $291.63
+# vs $292; AMD $470 exactly), as the original paths weren't recorded in the run log.
+BASE_ASSUMPTIONS = {
+    "NVDA": (0.30, 0.12, 0.419, 0.40),
+    "META": (0.17, 0.05, 0.1186, 0.30),
+    "MSFT": (0.14, 0.06, 0.173, 0.35),
+    "AVGO": (0.15, 0.08, 0.4422, 0.45),
+    "TSM": (0.20, 0.10, 0.2958, 0.37),
+    "AMZN": (0.14, 0.06, -0.0436, 0.10),
+    "GOOGL": (0.15, 0.08, 0.2421, 0.25),
+    "AMD": (0.25, 0.15, 0.203, 0.35),
+    "MU": (0.10, 0.05, 0.4427, 0.30),
+    "ANET": (0.20, 0.08, 0.489, 0.45),
+    "VST": (0.04, 0.02, 0.1174, 0.13),
+    "SPCX": (0.45, 0.25, -1.253, 0.25),
+    "PLTR": (0.32, 0.15, 0.5455, 0.58),
+    "MRVL": (0.20, 0.10, 0.1823, 0.20),
+    "LLY": (0.14, 0.05, 0.1352, 0.28),
+    "TSLA": (0.12, 0.06, 0.0318, 0.11),
+    "ASML": (0.15, 0.08, 0.532, 0.35),
+    "CRWD": (0.22, 0.12, 0.2822, 0.30),
+}
+
 # Yahoo's sharesOutstanding is incomplete for multi-class names; use total shares
 # confirmed from market cap / price. SPCX: Q3 report total A+B. META: Class A only
 # in Yahoo's count (2.214B) vs 2.557B total A+B. PLTR: total A+B+F vs 2.301B reported.

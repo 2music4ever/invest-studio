@@ -461,3 +461,19 @@ margin convergence over 5 years. Format: "X% @ $price".
 - MATRIX: DCF_STACKS GOOGL now (169, 281, 459); PRICED_IN "11.8% @ $279". No more
   blank DCF cells in the Matrix — per the Nov 2 standing rule, every added ticker
   gets at least a base-case DCF run rather than a permanent blank.
+
+## NVDA / AMD base paths — RECONSTRUCTED (Nov 2, ~16:00 PT)
+- Gap found while building the Matrix base-assumptions table: the Oct 31 NVDA and
+  Oct 27 AMD base paths were never recorded in this log. Reconstructed by solving
+  the lab dcf() against the displayed bases on known inputs:
+- NVDA: 30%/12% growth, margin 41.9%→40% (TTM rev $302.97B, FCF $127.0B, net cash
+  $23.6B, 24.147B shares, 10% hurdle, 3% terminal) → $291.63 vs displayed $292
+  (0.1% — input rounding). Consistent with the Oct 31 fade narrative (deceleration
+  after 2028–2030). Treated as the base path for the assumptions table.
+- AMD: 25%/15% growth, margin 20.3%→35% (pre-Q3 TTM rev $41.30B, net cash $8.8B,
+  ~1,620M shares, 10% hurdle, 3% terminal) → $470 exactly vs displayed $470.
+  Treated as the base path for the assumptions table.
+- Both rows are marked * in the Matrix assumptions table so a reader knows these
+  two paths are reconstructions, not contemporaneous records. If the original
+  Oct 27/31 workpapers surface with different paths, correct the table — the
+  displayed base values themselves do not change.

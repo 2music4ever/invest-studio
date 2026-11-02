@@ -1015,18 +1015,7 @@ with tabs[6]:
                        _view.to_csv(index=False).encode("utf-8"),
                        file_name="invest-studio-matrix.csv", mime="text/csv",
                        key="matrix_csv")
-    st.caption("SPCX market cap and shares use 13.58B total shares (Yahoo reports one class only). "
-               "META (2.557B) and PLTR (2.403B) shares likewise use total share counts — "
-               "Yahoo reports Class A only for META — so market cap, VC and DCF columns "
-               "all divide by the same count. "
-               "Non-USD reporters (TSM in TWD) are converted at Yahoo's FX rate, with "
-               "market-cap-implied ADR shares. "
-               "VST's stack is on GAAP FCF; on management's adjusted FCF-before-growth "
-               "(~22.5% margin) base growth implies ~$132 — the gap is margin definition "
-               "plus leverage (bear EV below net debt floors equity at $0), not a short signal. "
-               "PLTR's priced-in run still uses pre-print TTM (Q3 printed Nov 2; stack refresh "
-               "pending Q3 cash-flow statements). ANET's uses pre-print TTM (prints Nov 3). "
-               "Score (0–100, higher is better) = 35% DCF priced-in growth (lower is better) "
+    st.caption("Score (0–100, higher is better) = 35% DCF priced-in growth (lower is better) "
                "+ 25% gap to DCF base + 30% gap to consensus + 10% VC priced-in growth "
                "(multiple-risk gauge, lower is better). Each leg is clipped-linear scaled "
                "(priced-in 8–43%, gap-to-base −85% to +45%, gap-to-consensus 0–100%, "
@@ -1034,13 +1023,43 @@ with tabs[6]:
                "is scored at its 28.5% midpoint. Names missing any leg (e.g. added tickers "
                "without a DCF stack) get no Score. The VC leg — and therefore the Score — "
                "moves with the VC sliders above. The Score uses "
-               "only columns already in this table. "
-               "Next-earnings dates are best-effort from Yahoo's calendar and may be blank. "
-               "VC method: revenue grown at Yahoo YoY revenue growth clipped to 0–30% "
-               "(10% when Yahoo lacks it), exit EV/Sales and hurdle from the sliders above, "
-               "plus today's net cash. One multiple for every name is crude by design — "
-               "a pharma name and a chip name don't deserve the same exit multiple — "
-               "so use VC columns for ranking, not precision; the DCF stacks remain the "
-               "real numbers where they exist. VC priced-in growth solves that same "
-               "equation backwards at today's price. Yahoo consensus targets and multiples "
-               "can lag — treat as a starting point, not a verdict.")
+               "only columns already in this table.")
+    with st.expander("Notes, methods & base-case DCF assumptions"):
+        st.markdown("- SPCX market cap and shares use 13.58B total shares (Yahoo reports one "
+                    "class only). META (2.557B) and PLTR (2.403B) shares likewise use total "
+                    "share counts — Yahoo reports Class A only for META — so market cap, VC "
+                    "and DCF columns all divide by the same count.")
+        st.markdown("- Non-USD reporters (TSM in TWD) are converted at Yahoo's FX rate, with "
+                    "market-cap-implied ADR shares.")
+        st.markdown("- VST's stack is on GAAP FCF; on management's adjusted FCF-before-growth "
+                    "(~22.5% margin) base growth implies ~$132 — the gap is margin definition "
+                    "plus leverage (bear EV below net debt floors equity at $0), not a short signal.")
+        st.markdown("- PLTR's priced-in run still uses pre-print TTM (Q3 printed Nov 2; stack "
+                    "refresh pending Q3 cash-flow statements). ANET's uses pre-print TTM "
+                    "(prints Nov 3).")
+        st.markdown("- Next-earnings dates are best-effort from Yahoo's calendar and may be blank.")
+        st.markdown("- VC method: revenue grown at Yahoo YoY revenue growth clipped to 0–30% "
+                    "(10% when Yahoo lacks it), exit EV/Sales and hurdle from the sliders above, "
+                    "plus today's net cash. One multiple for every name is crude by design — "
+                    "a pharma name and a chip name don't deserve the same exit multiple — "
+                    "so use VC columns for ranking, not precision; the DCF stacks remain the "
+                    "real numbers where they exist. VC priced-in growth solves that same "
+                    "equation backwards at today's price. Yahoo consensus targets and multiples "
+                    "can lag — treat as a starting point, not a verdict.")
+        st.markdown("**Base-case DCF assumptions** — the inputs behind each DCF base value. "
+                    "Uniform for every name: 10% hurdle, 3% terminal growth, FCF margin "
+                    "converging linearly from TTM to normalized over 5 years.")
+        _arows = []
+        for _tk in MX.MATRIX_TICKERS:
+            _ge, _gl, _tm, _nm = MX.BASE_ASSUMPTIONS[_tk]
+            _ttm = "24.2% (maint.)" if _tk == "GOOGL" else f"{_tm:.1%}"
+            _mark = " *" if _tk in ("NVDA", "AMD") else ""
+            _arows.append({"Ticker": _tk + _mark, "Growth yrs 1–5": f"{_ge:.0%}",
+                           "Growth yrs 6–10": f"{_gl:.0%}", "TTM FCF margin": _ttm,
+                           "Normalized margin": f"{_nm:.0%}"})
+        st.dataframe(pd.DataFrame(_arows), width="stretch", hide_index=True)
+        st.caption("GOOGL's TTM margin is the maintenance-capex margin (trough total-capex "
+                   "margin is 4.2%). SPCX's TTM margin is deeply negative on peak capex "
+                   "(OCF $15.8B vs capex $55.9B) and converges to norm over 5 years. "
+                   "* NVDA/AMD base paths were reconstructed Nov 2 — each reproduces its "
+                   "displayed base exactly; the original paths weren't recorded in the run log.")
