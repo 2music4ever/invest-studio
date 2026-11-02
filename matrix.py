@@ -1,9 +1,9 @@
-"""Matrix tab data: one row per name, live Yahoo metrics + the user's adopted bases.
+"""Matrix tab data: one row per name, live Yahoo metrics + DCF stacks and
+reverse-DCF priced-in figures from prior analyses, set against consensus
+price targets so valuation methods can be compared side by side.
 
-Bases are the user's adopted Oct 27-28 decisions (see MEMORY.md), not live
-estimates. A blank base means no adopted base exists for that name — it is
-left blank rather than invented. Priced-in growth figures are stored values
-anchored to the price noted, not recomputed live.
+A blank DCF or priced-in cell means no stack exists for that name — it is
+left blank rather than invented. No adopted bases are shown here by design.
 """
 import numpy as np
 import pandas as pd
@@ -16,21 +16,6 @@ import data as D
 MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
                   "AMD", "MU", "ANET", "VST", "SPCX", "PLTR", "MRVL",
                   "LLY", "TSLA", "ASML", "CRWD"]
-
-# ticker -> (display label, midpoint used for the gap math)
-ADOPTED_BASES = {
-    "NVDA": ("$323", 323.0),
-    "META": ("$952", 952.0),
-    "MSFT": ("~$530", 530.0),
-    "AVGO": ("$360–400", 380.0),
-    "TSM": ("~$480", 480.0),
-    "AMZN": ("$230–291", 260.0),
-    "GOOGL": ("$260–330", 295.0),
-    "AMD": ("$440–470", 455.0),
-    "MU": ("DCF $811", 811.0),
-    "ANET": ("$210–245", 227.5),
-    "SPCX": ("≈$100", 100.0),
-}
 
 # ticker -> (bear, base, bull) DCF values where a full stack exists.
 DCF_STACKS = {
@@ -53,7 +38,6 @@ SHARES_OVERRIDE = {"SPCX": 13.58e9}
 
 GROUPS = {
     "Price & move": ["Price", "Day %", "Market cap ($B)"],
-    "Value vs your base": ["Base", "Gap to base %"],
     "Analyst consensus": ["Consensus", "Gap to consensus %"],
     "DCF": ["DCF bear", "DCF base", "DCF bull", "Priced-in growth"],
     "Multiples": ["Fwd P/E", "Trail P/E", "PEG", "P/S", "EV/EBITDA"],
@@ -114,8 +98,6 @@ def build_matrix(on_progress=None) -> pd.DataFrame:
         hi, lo = _num(ex["wk52_high"]), _num(ex["wk52_low"])
         pos = ((price - lo) / (hi - lo) if np.isfinite(price) and np.isfinite(hi)
                and np.isfinite(lo) and hi > lo else np.nan)
-        base_label, base_mid = ADOPTED_BASES.get(tk, (np.nan, np.nan))
-        gap_base = (price / base_mid - 1) if np.isfinite(price) and np.isfinite(base_mid) else np.nan
         cons = _num(snap.get("target_mean"))
         gap_cons = (price / cons - 1) if np.isfinite(price) and np.isfinite(cons) and cons else np.nan
         bear, dbase, bull = DCF_STACKS.get(tk, (np.nan, np.nan, np.nan))
@@ -126,8 +108,6 @@ def build_matrix(on_progress=None) -> pd.DataFrame:
             "Price": price,
             "Day %": day,
             "Market cap ($B)": mcap / 1e9 if np.isfinite(mcap) else np.nan,
-            "Base": base_label,
-            "Gap to base %": gap_base,
             "Consensus": cons,
             "Gap to consensus %": gap_cons,
             "DCF bear": bear,
@@ -157,7 +137,7 @@ _FORMATS = {
     "Price": "${:,.2f}", "Market cap ($B)": "{:,.0f}",
     "Consensus": "${:,.2f}", "DCF bear": "${:,.0f}", "DCF base": "${:,.0f}",
     "DCF bull": "${:,.0f}",
-    "Day %": "{:.1%}", "Gap to base %": "{:+.1%}", "Gap to consensus %": "{:+.1%}",
+    "Day %": "{:.1%}", "Gap to consensus %": "{:+.1%}",
     "Rev growth %": "{:.1%}", "Op margin %": "{:.1%}", "Profit margin %": "{:.1%}",
     "Div %": "{:.2%}", "52wk position %": "{:.0%}",
     "Fwd P/E": "{:.1f}", "Trail P/E": "{:.1f}", "PEG": "{:.2f}",
@@ -166,7 +146,8 @@ _FORMATS = {
 
 
 def _gap_bg(val, good_below=True):
-    """Gap columns: below base = green tint, above base = red tint (dark-theme safe)."""
+    """Gap-to-consensus: below the Street target (upside to target) = green tint,
+    above it = red tint (dark-theme safe)."""
     if val is None or (isinstance(val, float) and np.isnan(val)):
         return ""
     below = val < 0
@@ -178,9 +159,6 @@ def _gap_bg(val, good_below=True):
 def style_matrix(df: pd.DataFrame):
     """Formats + gap coloring for st.dataframe."""
     sty = df.style.format(_FORMATS, na_rep="n/a")
-    if "Gap to base %" in df.columns:
-        sty = sty.map(_gap_bg, subset=["Gap to base %"])
     if "Gap to consensus %" in df.columns:
-        sty = sty.map(lambda v: _gap_bg(v, good_below=False),
-                      subset=["Gap to consensus %"])
+        sty = sty.map(_gap_bg, subset=["Gap to consensus %"])
     return sty

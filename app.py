@@ -900,9 +900,11 @@ with tabs[5]:
 # ================= TAB 7 — MATRIX =================
 with tabs[6]:
     st.subheader("Matrix — all names, one table")
-    st.caption("Live Yahoo metrics (cached 1 hour) against your adopted bases. "
-               "Gap to base is green below base, red above; gap to consensus is the reverse. "
-               "Bases are your adopted Oct 27–28 decisions — a blank base means no adopted base, not zero. "
+    st.caption("Live Yahoo metrics (cached 1 hour) with DCF stacks and reverse-DCF "
+               "priced-in figures from prior analyses, set against consensus price "
+               "targets for every name — so each valuation method can be compared "
+               "with the Street's. Gap to consensus is green when the price sits "
+               "below the target (upside to target), red when above it. "
                "Priced-in growth figures are stored reverse-DCF values at the anchor price shown.")
     if st.button("Refresh data", key="matrix_refresh"):
         st.cache_data.clear()
@@ -911,15 +913,13 @@ with tabs[6]:
     _groups = st.multiselect("Metric groups", list(MX.GROUPS.keys()),
                              default=list(MX.GROUPS.keys()), key="matrix_groups")
     _cols = ["Ticker", "Name"] + [c for g in _groups for c in MX.GROUPS[g]]
-    _c1, _c2, _c3 = st.columns(3)
+    _c1, _c2 = st.columns(2)
     with _c1:
-        _below_only = st.checkbox("Only names below base", value=False, key="matrix_below")
-    with _c2:
-        _sort_col = st.selectbox("Sort by", ["Gap to base %", "Price", "Day %",
-                                             "Gap to consensus %", "Market cap ($B)",
+        _sort_col = st.selectbox("Sort by", ["Gap to consensus %", "Price", "Day %",
+                                             "Market cap ($B)",
                                              "Fwd P/E", "Rev growth %"],
                                  key="matrix_sort")
-    with _c3:
+    with _c2:
         _ascending = st.checkbox("Ascending (cheapest first)", value=True, key="matrix_asc")
 
     _bar = st.progress(0, text="Loading matrix…")
@@ -928,8 +928,6 @@ with tabs[6]:
     _mdf = MX.build_matrix(on_progress=_prog)
     _bar.empty()
 
-    if _below_only:
-        _mdf = _mdf[_mdf["Gap to base %"] < 0]
     _view = _mdf[[c for c in _cols if c in _mdf.columns]]
     if _sort_col in _view.columns:
         _view = _view.sort_values(_sort_col, ascending=_ascending, na_position="last")
