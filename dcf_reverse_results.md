@@ -430,3 +430,34 @@ margin convergence over 5 years. Format: "X% @ $price".
 - MATRIX CONSISTENCY: PLTR shares also overridden to 2.4031B in matrix.py (like META),
   so VC columns divide by the same share count as DCF. This revises PLTR VC value
   $34.84 → ~$33.36 (upside −81.6%).
+
+## GOOGL — VERIFIED by parent (Nov 2, ~15:30 PT) — full stack rerun, replaces base-only entry
+- Price: $278.99 (run time; Oct 27 anchor was $322 — price fell with the Nov 2 chip selloff)
+- TTM revenue: $471.098B (Q3'26 $127.577B + Q2'26 $119.796B + Q1'26 $109.896B + Q4'25
+  $113.829B; quarterlies fresh through Q3'26, matches the Oct 28 print)
+- TTM OCF $179.551B; capex $159.804B (Q3 alone $51.355B, matches print) → TTM FCF
+  $19.747B → trough margin 4.19% (peak-capex trough, not run-rate earning power)
+- Maintenance basis (PRIMARY, per the capex rule for capex-heavy names): maintenance
+  capex 13.9% of revenue = $65.483B → FCF $114.068B → margin 24.21% (13.9% carried
+  from the Oct 27 reassessment: above pre-ChatGPT intensity, below peak)
+- Net cash: $114.767B (totalCash $265.098B incl. short-term investments −
+  totalDebt $150.331B); shares 12.294B (marketCap/price implied; Yahoo info shows
+  5.888B one class only, 2.09x — trips the 1.3x trigger; get_fundamentals agrees)
+- DCF cases (maintenance basis, 10% hurdle, 3% terminal, 5-yr margin convergence):
+  bear $168.56 (10%/4%, 20%) / base $280.76 (15%/8%, 25%) / bull $458.99 (20%/12%, 30%)
+- Cross-check (trough basis, same growth/norms): bear $153.22 / base $263.98 /
+  bull $440.65 — only ~6% below the maintenance base, because 5-yr margin
+  convergence washes out most of the trough. Either basis puts GOOGL at ~base.
+- Reverse-DCF (maintenance basis, norm 25%): 11.8% @ $279; at the Oct 27 anchor
+  $322 the same inputs give 13.8% (vs 14.9% on older TTM — methodology continuity
+  confirmed; the drop is price + fresh TTM, not a method change). Trough-basis
+  reverse @ $279: 12.6%.
+- Verdict: price ≈ fresh base ($281 vs $279) — fairly valued on DCF, not depressed.
+  Consensus $402.73 sits near bull, so the Street prices much more optimism than
+  the base case. TPU external sales stay embedded in base growth with full upside
+  in bull only (never an add-on); Search AI Mode monetization still unresolved,
+  and the bull case assumes progress there. Cloud backlog $561B supports base
+  growth; Q3 cash leg (FCF −$9.07B in the quarter) is the watch item.
+- MATRIX: DCF_STACKS GOOGL now (169, 281, 459); PRICED_IN "11.8% @ $279". No more
+  blank DCF cells in the Matrix — per the Nov 2 standing rule, every added ticker
+  gets at least a base-case DCF run rather than a permanent blank.

@@ -2,8 +2,9 @@
 reverse-DCF priced-in figures from prior analyses, set against consensus
 price targets so valuation methods can be compared side by side.
 
-A blank DCF or priced-in cell means no stack exists for that name — it is
-left blank rather than invented.
+A blank DCF or priced-in cell means no stack exists for that name yet — it is
+left blank rather than invented, and every added name gets at least a base-case
+DCF run instead of a permanent blank.
 """
 import numpy as np
 import pandas as pd
@@ -26,7 +27,7 @@ DCF_STACKS = {
     "MU": (342.0, 811.0, 1709.0),
     "NVDA": (227.0, 292.0, 387.0),
     "AMD": (341.0, 470.0, 583.0),
-    "GOOGL": (np.nan, 257.0, np.nan),
+    "GOOGL": (169.0, 281.0, 459.0),
     "META": (392.0, 738.0, 1128.0),
     "MSFT": (264.0, 390.0, 554.0),
     "AVGO": (134.0, 231.0, 421.0),
@@ -47,7 +48,7 @@ DCF_STACKS = {
 # All 18 book names now have reverse-DCF priced-in growth (Nov 2, 2026 run,
 # uniform 10-yr growth, 10% hurdle, 3% terminal, lab FCF convention gross of SBC).
 PRICED_IN = {
-    "GOOGL": ("14.9% @ $322", 322.0),
+    "GOOGL": ("11.8% @ $279", 279.0),
     "AMD": ("27–30% @ $557", 557.0),
     "NVDA": ("16.7% @ $204.64", 204.64),
     "META": ("9.2% @ $612", 612.0),
