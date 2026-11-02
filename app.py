@@ -1033,7 +1033,7 @@ with tabs[6]:
                "VC priced-in 0–87%) so small differences stay small; AMD's '27–30%' priced-in "
                "is scored at its 28.5% midpoint. Names missing any leg (e.g. added tickers "
                "without a DCF stack) get no Score. The VC leg — and therefore the Score — "
-               "moves with the VC sliders above. No adopted bases enter the Score; it uses "
+               "moves with the VC sliders above. The Score uses "
                "only columns already in this table. "
                "Next-earnings dates are best-effort from Yahoo's calendar and may be blank. "
                "VC method: revenue grown at Yahoo YoY revenue growth clipped to 0–30% "

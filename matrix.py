@@ -3,7 +3,7 @@ reverse-DCF priced-in figures from prior analyses, set against consensus
 price targets so valuation methods can be compared side by side.
 
 A blank DCF or priced-in cell means no stack exists for that name — it is
-left blank rather than invented. No adopted bases are shown here by design.
+left blank rather than invented.
 """
 import numpy as np
 import pandas as pd
@@ -266,8 +266,8 @@ def vc_priced_in_growth(price, rev_b, shares_b, net_cash_b, years, ev_sales,
     return np.where(ok, g, np.nan)
 
 
-# Composite Score: one 0–100 rank from existing Matrix columns only (no adopted
-# bases, no new data). Weights: DCF priced-in growth 35%, gap to DCF base 25%,
+# Composite Score: one 0–100 rank from existing Matrix columns only (no outside
+# inputs, no personal overrides). Weights: DCF priced-in growth 35%, gap to DCF base 25%,
 # gap to consensus 30%, VC priced-in growth (multiple-risk gauge) 10%.
 # Each leg is clipped-linear scaled so small differences stay small (percentile
 # ranks exaggerated clustered values, e.g. 15.0% vs 16.7% priced-in).
