@@ -970,8 +970,9 @@ with tabs[6]:
     with _v2:
         _vc_mult = st.slider("Exit EV/Sales", 2.0, 12.0, 5.0, 0.5, key="matrix_vc_mult")
     with _v3:
-        _vc_hurdle = st.slider("Hurdle rate", 0.08, 0.15, 0.10, 0.01, key="matrix_vc_hurdle",
-                               format="%.0f%%")
+        _vc_hurdle_pct = st.slider("Hurdle rate", 8, 15, 10, 1, key="matrix_vc_hurdle",
+                                   format="%d%%")
+        _vc_hurdle = _vc_hurdle_pct / 100.0
 
     _groups = st.multiselect("Metric groups", list(MX.GROUPS.keys()),
                              default=list(MX.GROUPS.keys()), key="matrix_groups")
