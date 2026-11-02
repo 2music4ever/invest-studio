@@ -1011,8 +1011,16 @@ with tabs[6]:
                        file_name="invest-studio-matrix.csv", mime="text/csv",
                        key="matrix_csv")
     st.caption("SPCX market cap and shares use 13.58B total shares (Yahoo reports one class only). "
+               "META (2.557B) and PLTR (2.403B) shares likewise use total share counts — "
+               "Yahoo reports Class A only for META — so market cap, VC and DCF columns "
+               "all divide by the same count. "
                "Non-USD reporters (TSM in TWD) are converted at Yahoo's FX rate, with "
                "market-cap-implied ADR shares. "
+               "VST's stack is on GAAP FCF; on management's adjusted FCF-before-growth "
+               "(~22.5% margin) base growth implies ~$132 — the gap is margin definition "
+               "plus leverage (bear EV below net debt floors equity at $0), not a short signal. "
+               "PLTR (Q3 tonight) and ANET (Q3 tomorrow) priced-in runs use pre-print TTM "
+               "and go stale after the prints. "
                "Next-earnings dates are best-effort from Yahoo's calendar and may be blank. "
                "VC method: revenue grown at Yahoo YoY revenue growth clipped to 0–30% "
                "(10% when Yahoo lacks it), exit EV/Sales and hurdle from the sliders above, "

@@ -18,23 +18,59 @@ MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
                   "LLY", "TSLA", "ASML", "CRWD"]
 
 # ticker -> (bear, base, bull) DCF values where a full stack exists.
+# All 18 book names now have stacks (Nov 2, 2026 run, 10% hurdle, 3% terminal).
+# VST bear is floored at $0: raw model value is -$0.50 (EV below net debt),
+# but limited liability floors equity at zero — see the tab footnote.
 DCF_STACKS = {
     "MU": (342.0, 811.0, 1709.0),
     "NVDA": (227.0, 292.0, 387.0),
     "AMD": (341.0, 470.0, 583.0),
     "GOOGL": (np.nan, 257.0, np.nan),
+    "META": (392.0, 738.0, 1128.0),
+    "MSFT": (264.0, 390.0, 554.0),
+    "AVGO": (134.0, 231.0, 421.0),
+    "AMZN": (84.0, 148.0, 248.0),
+    "TSM": (219.0, 414.0, 599.0),
+    "ANET": (80.0, 141.0, 226.0),
+    "VST": (0.0, 50.0, 95.0),
+    "SPCX": (17.0, 81.0, 273.0),
+    "PLTR": (48.0, 106.0, 222.0),
+    "MRVL": (39.0, 78.0, 149.0),
+    "LLY": (322.0, 592.0, 976.0),
+    "TSLA": (28.0, 71.0, 145.0),
+    "ASML": (727.0, 1217.0, 2031.0),
+    "CRWD": (38.0, 71.0, 117.0),
 }
 
 # ticker -> (display label, anchor price the reverse-DCF was run at)
+# All 18 book names now have reverse-DCF priced-in growth (Nov 2, 2026 run,
+# uniform 10-yr growth, 10% hurdle, 3% terminal, lab FCF convention gross of SBC).
 PRICED_IN = {
     "GOOGL": ("14.9% @ $322", 322.0),
     "AMD": ("27–30% @ $557", 557.0),
     "NVDA": ("16.7% @ $204.64", 204.64),
+    "META": ("9.2% @ $612", 612.0),
+    "MSFT": ("14.0% @ $514", 514.0),
+    "AVGO": ("16.4% @ $326", 326.0),
+    "AMZN": ("16.3% @ $249", 249.0),
+    "TSM": ("15.0% @ $403", 403.0),
+    "ANET": ("16.8% @ $165", 165.0),
+    "VST": ("10.9% @ $135", 135.0),
+    "SPCX": ("42.5% @ $138", 138.0),
+    "PLTR": ("31.7% @ $181", 181.0),
+    "MRVL": ("26.0% @ $170", 170.0),
+    "LLY": ("20.9% @ $1,419", 1419.0),
+    "TSLA": ("33.9% @ $404", 404.0),
+    "ASML": ("15.2% @ $1,537", 1537.0),
+    "CRWD": ("35.1% @ $243", 243.0),
+    "MU": ("8.4% @ $839", 839.0),
 }
 
-# Yahoo reports one share class only for multi-class names; total shares
-# (class A+B) confirmed from the Q3 report. Market cap is rebuilt from it.
-SHARES_OVERRIDE = {"SPCX": 13.58e9}
+# Yahoo's sharesOutstanding is incomplete for multi-class names; use total shares
+# confirmed from market cap / price. SPCX: Q3 report total A+B. META: Class A only
+# in Yahoo's count (2.214B) vs 2.557B total A+B. PLTR: total A+B+F vs 2.301B reported.
+# Market cap is rebuilt from the override, which also corrects it.
+SHARES_OVERRIDE = {"SPCX": 13.58e9, "META": 2.557e9, "PLTR": 2.4031e9}
 
 GROUPS = {
     "Price & move": ["Price", "Day %", "Market cap ($B)"],
