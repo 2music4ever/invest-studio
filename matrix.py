@@ -7,6 +7,7 @@ left blank rather than invented. No adopted bases are shown here by design.
 """
 import numpy as np
 import pandas as pd
+import re
 import streamlit as st
 import yfinance as yf
 
@@ -73,6 +74,7 @@ PRICED_IN = {
 SHARES_OVERRIDE = {"SPCX": 13.58e9, "META": 2.557e9, "PLTR": 2.4031e9}
 
 GROUPS = {
+    "Score": ["Score"],
     "Price & move": ["Price", "Day %", "Market cap ($B)"],
     "Analyst consensus": ["Consensus", "Gap to consensus %"],
     "DCF": ["DCF bear", "DCF base", "DCF bull", "Priced-in growth"],
@@ -264,8 +266,56 @@ def vc_priced_in_growth(price, rev_b, shares_b, net_cash_b, years, ev_sales,
     return np.where(ok, g, np.nan)
 
 
+# Composite Score: one 0–100 rank from existing Matrix columns only (no adopted
+# bases, no new data). Weights: DCF priced-in growth 35%, gap to DCF base 25%,
+# gap to consensus 30%, VC priced-in growth (multiple-risk gauge) 10%.
+# Each leg is clipped-linear scaled so small differences stay small (percentile
+# ranks exaggerated clustered values, e.g. 15.0% vs 16.7% priced-in).
+SCORE_WEIGHTS = {"pi": 0.35, "base": 0.25, "cons": 0.30, "vc": 0.10}
+SCORE_CLIPS = {"pi": (8.0, 43.0), "base": (-0.85, 0.45),
+               "cons": (0.0, 1.0), "vc": (0.0, 0.87)}
+
+
+def parse_priced_in(label):
+    """'26.0% @ $170' -> 26.0; ranges ('27–30% @ $557') -> midpoint 28.5."""
+    if label is None or (isinstance(label, float) and np.isnan(label)):
+        return np.nan
+    m = re.match(r"\s*([\d.]+)(?:\s*[–-]\s*([\d.]+))?\s*%", str(label))
+    if not m:
+        return np.nan
+    a = float(m.group(1))
+    return (a + float(m.group(2))) / 2 if m.group(2) else a
+
+
+def _clip_score(values, lo, hi, lower_better):
+    v = np.clip(np.asarray(values, dtype=float), lo, hi)
+    sc = (v - lo) / (hi - lo) * 100.0
+    return 100.0 - sc if lower_better else sc
+
+
+def add_score(df):
+    """Append the composite Score (0–100, higher is better) from columns already
+    in the frame. NaN where any leg is missing (e.g. added tickers without a
+    DCF stack, consensus target, priced-in run, or VC inputs). The VC leg moves
+    with the tab's VC sliders, so the Score moves with them too."""
+    df = df.copy()
+    pi = (df["Priced-in growth"].map(parse_priced_in)
+          if "Priced-in growth" in df else np.nan)
+    gap_base = (df["DCF base"] - df["Price"]) / df["Price"]
+    gap_cons = (df["Consensus"] - df["Price"]) / df["Price"]
+    vc = df["VC priced-in growth %"] if "VC priced-in growth %" in df else np.nan
+    s = (SCORE_WEIGHTS["pi"] * _clip_score(pi, *SCORE_CLIPS["pi"], True)
+         + SCORE_WEIGHTS["base"] * _clip_score(gap_base, *SCORE_CLIPS["base"], False)
+         + SCORE_WEIGHTS["cons"] * _clip_score(gap_cons, *SCORE_CLIPS["cons"], False)
+         + SCORE_WEIGHTS["vc"] * _clip_score(vc, *SCORE_CLIPS["vc"], True))
+    missing = (pd.isna(pi) | pd.isna(gap_base) | pd.isna(gap_cons) | pd.isna(vc))
+    df["Score"] = np.where(missing, np.nan, s)
+    return df
+
+
 _FORMATS = {
     "Price": "${:,.2f}", "Market cap ($B)": "{:,.0f}",
+    "Score": "{:.0f}",
     "Consensus": "${:,.2f}", "DCF bear": "${:,.0f}", "DCF base": "${:,.0f}",
     "DCF bull": "${:,.0f}",
     "Revenue ($B)": "{:,.0f}", "Shares (B)": "{:.2f}", "Net cash ($B)": "{:,.0f}",

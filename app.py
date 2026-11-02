@@ -907,7 +907,9 @@ with tabs[6]:
                "below the target (upside to target), red when above it. "
                "Priced-in growth figures are stored reverse-DCF values at the anchor price shown. "
                "The VC exit-value group applies one uniform method to every name, so those "
-               "columns never blank — including a VC priced-in growth solved at today's price.")
+               "columns never blank — including a VC priced-in growth solved at today's price. "
+               "A composite Score (0–100, higher is better) ranks every name on four of "
+               "these columns — see the note below the table.")
     if st.button("Refresh data", key="matrix_refresh"):
         st.cache_data.clear()
         st.rerun()
@@ -982,7 +984,7 @@ with tabs[6]:
         _sort_col = st.selectbox("Sort by", ["Gap to consensus %", "VC upside %",
                                              "VC priced-in growth %", "Price", "Day %",
                                              "Market cap ($B)",
-                                             "Fwd P/E", "Rev growth % (Q YoY)"],
+                                             "Fwd P/E", "Rev growth % (Q YoY)", "Score"],
                                  key="matrix_sort")
     with _c2:
         _ascending = st.checkbox("Ascending (cheapest first)", value=True, key="matrix_asc")
@@ -1002,6 +1004,9 @@ with tabs[6]:
         _mdf["Price"], _mdf["Revenue ($B)"], _mdf["Shares (B)"],
         _mdf["Net cash ($B)"], _vc_years, _vc_mult, _vc_hurdle)
 
+    # Composite Score from existing columns only (see matrix.add_score).
+    _mdf = MX.add_score(_mdf)
+
     _view = _mdf[[c for c in _cols if c in _mdf.columns]]
     if _sort_col in _view.columns:
         _view = _view.sort_values(_sort_col, ascending=_ascending, na_position="last")
@@ -1019,8 +1024,17 @@ with tabs[6]:
                "VST's stack is on GAAP FCF; on management's adjusted FCF-before-growth "
                "(~22.5% margin) base growth implies ~$132 — the gap is margin definition "
                "plus leverage (bear EV below net debt floors equity at $0), not a short signal. "
-               "PLTR (Q3 tonight) and ANET (Q3 tomorrow) priced-in runs use pre-print TTM "
-               "and go stale after the prints. "
+               "PLTR's priced-in run still uses pre-print TTM (Q3 printed Nov 2; stack refresh "
+               "pending Q3 cash-flow statements). ANET's uses pre-print TTM (prints Nov 3). "
+               "Score (0–100, higher is better) = 35% DCF priced-in growth (lower is better) "
+               "+ 25% gap to DCF base + 30% gap to consensus + 10% VC priced-in growth "
+               "(multiple-risk gauge, lower is better). Each leg is clipped-linear scaled "
+               "(priced-in 8–43%, gap-to-base −85% to +45%, gap-to-consensus 0–100%, "
+               "VC priced-in 0–87%) so small differences stay small; AMD's '27–30%' priced-in "
+               "is scored at its 28.5% midpoint. Names missing any leg (e.g. added tickers "
+               "without a DCF stack) get no Score. The VC leg — and therefore the Score — "
+               "moves with the VC sliders above. No adopted bases enter the Score; it uses "
+               "only columns already in this table. "
                "Next-earnings dates are best-effort from Yahoo's calendar and may be blank. "
                "VC method: revenue grown at Yahoo YoY revenue growth clipped to 0–30% "
                "(10% when Yahoo lacks it), exit EV/Sales and hurdle from the sliders above, "
