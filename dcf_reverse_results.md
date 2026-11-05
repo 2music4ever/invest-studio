@@ -489,3 +489,28 @@ margin convergence over 5 years. Format: "X% @ $price".
 - FQ2 FY27: rev $1.44B (+27%) vs $1.38B cons; adj EPS $0.52 vs $0.47; royalty $670M (+8%) missed ~$705–721M; license $773M (+50%); Q3 guide rev $1.54B ±$50M, EPS $0.56 ±$0.04; royalty guided low-single-digit; AGI CPU $2B across FY27–28.
 - Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.25, 0.12, 0.215, 0.35) = $87.29 ✓; bear $32.95 ✓; bull $141.42 ✓; reverse at 28.18% ✓.
 - Verdict: PASS at $168.57 (Oct 26 PASS at $222.11 stands, refreshed). User's level: wait till $141 (fresh bull case). Added to Matrix Nov 5 (19th name).
+
+## ALAB — VERIFIED by parent (Nov 5, ~13:30 PT)
+- Price: $184.06 (Finnhub Nov 5; prev close $223.33, -17.6% on the day; entry $179.77)
+- TTM revenue: $1,556.2M (hand-built from quarterlies + Q3'26 print $584.9M; lab get_fundamentals was STALE at $1,201.9M pre-print); TTM FCF $344.7M → fcf_margin 22.15%
+- fcf_margin_norm (base): 35% (margin converges from 22.15% over 5 yrs)
+- Shares: 187M diluted (company-guided; basic 174.78M); base on basic shares $261
+- Net debt: -$1,380M (net cash $1,380M; debt $0)
+- DCF cases: bear $110 (25%/8%, 30%) / base $244 (40%/12%, 35%) / bull $555 (55%/18%, 40%)
+- Reverse-DCF: **22.4% @ $184.06** (norm 35%; norm 30% → 24.4%; split yrs 1–5 31.8% at 12% yrs 6–10)
+- Q3'26: rev $584.9M (+154% YoY, +49% QoQ) vs ~$550.8M cons; non-GAAP EPS $1.32 vs $1.19; GM 72.4%; Scorpio annualized rev >$1B, now largest product family; Q4 guide rev $730–750M (mid +26% QoQ) vs $655.7M cons, EPS $1.62–1.66 vs $1.43; next print ~Feb 15, 2027.
+- SBC tension: SBC ~16.7% of revenue (~$260M annualized); SBC-adjusted base $138 — the key tension vs the $244 gross-of-SBC base.
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.40, 0.12, 0.2215, 0.35) = $243.58 ✓; bear $110.20 ✓; bull $554.56 ✓.
+- Verdict: BUY — 14 shares @ $179.77 executed Nov 5 (new position, $2,516.75). Added to Matrix Nov 5 (20th name). Variant logged as entry 6 (Scorpio-ramp durability; score at Feb 15, 2027 print).
+
+## COHR — VERIFIED by parent (Nov 5, ~13:30 PT)
+- Price: $195.09 (Nov 4 close; Nov 5 $172.42, -11.6% on the day; entry $169.30)
+- TTM revenue: $7,906.8M (FY26 TTM $7,118.2M - Q1 FY26 $1,581.4M + Q1 FY27 print $2,370M); TTM FCF -$1,030.6M → fcf_margin -14.48% (Q1 FY27 cashflow not yet filed)
+- fcf_margin_norm (base): 15% (margin converges from -14.48% over 5 yrs)
+- Shares: 196.9M (market-cap-implied)
+- Net debt: $1,551.4M (debt $3,538.4M - cash+ST $1,987.0M, Jun 30, 2026 BS)
+- DCF cases: bear $74 (15%/5%, 10%) / base $231 (25%/10%, 15%) / bull $566 (35%/15%, 20%)
+- Reverse-DCF: **15.8% @ $195.09** (norm 15%; norm 20% → 12.1%)
+- Q1 FY27: rev $2.37B vs ~$2.31B; non-GAAP EPS $2.09 vs ~$1.98; Datacentre & Communications $1.95B (+79%, 82% of revenue); Q2 guide $2.55–2.75B (mid $2.65B vs ~$2.53B), GM 40–42%, EPS $2.28–2.48; PhotonLink >$100M Mar-27 qtr, >$250M/qtr before end CY2027.
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.25, 0.10, -0.1448, 0.15) = $231.23 ✓; bear $73.93 ✓; bull $565.80 ✓.
+- Verdict: BUY — 18 shares @ $169.30 executed Nov 5 (new position, $3,047.40). Added to Matrix Nov 5 (21st name). Variant logged as entry 7 (PhotonLink/CPO mix to >45% GM + FCF inflection; score at Feb 2027 print).

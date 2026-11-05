@@ -17,11 +17,12 @@ import data as D
 # Book names + watchlist, in the user's usual order.
 MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
                   "AMD", "MU", "ANET", "VST", "SPCX", "PLTR", "MRVL",
-                  "LLY", "TSLA", "ASML", "CRWD", "ARM"]
+                  "LLY", "TSLA", "ASML", "CRWD", "ARM", "ALAB", "COHR"]
 
 # ticker -> (bear, base, bull) DCF values where a full stack exists.
 # All 18 book names have stacks (Nov 2, 2026 run, 10% hurdle, 3% terminal);
-# ARM added Nov 5, 2026 (post-FQ2 FY27 refresh, same convention).
+# ARM added Nov 5, 2026 (post-FQ2 FY27 refresh, same convention);
+# ALAB + COHR added Nov 5, 2026 (post-print stacks, same convention).
 # VST bear is floored at $0: raw model value is -$0.50 (EV below net debt),
 # but limited liability floors equity at zero — see the tab footnote.
 DCF_STACKS = {
@@ -44,12 +45,15 @@ DCF_STACKS = {
     "ASML": (727.0, 1217.0, 2031.0),
     "CRWD": (38.0, 71.0, 117.0),
     "ARM": (33.0, 87.0, 141.0),
+    "ALAB": (110.0, 244.0, 555.0),
+    "COHR": (74.0, 231.0, 566.0),
 }
 
 # ticker -> (display label, anchor price the reverse-DCF was run at)
 # All 18 book names have reverse-DCF priced-in growth (Nov 2, 2026 run,
 # uniform 10-yr growth, 10% hurdle, 3% terminal, lab FCF convention gross of SBC).
 # ARM added Nov 5, 2026 (anchor = live price at run time, $168.57).
+# ALAB + COHR added Nov 5, 2026 (anchors = live prices at run time).
 PRICED_IN = {
     "GOOGL": ("11.8% @ $279", 279.0),
     "AMD": ("27–30% @ $557", 557.0),
@@ -70,6 +74,8 @@ PRICED_IN = {
     "CRWD": ("35.1% @ $243", 243.0),
     "MU": ("8.4% @ $839", 839.0),
     "ARM": ("28.2% @ $168.57", 168.57),
+    "ALAB": ("22.4% @ $184.06", 184.06),
+    "COHR": ("15.8% @ $195.09", 195.09),
 }
 
 # Base-case DCF assumptions behind the DCF base column, in MATRIX_TICKERS order:
@@ -100,6 +106,8 @@ BASE_ASSUMPTIONS = {
     "ASML": (0.15, 0.08, 0.532, 0.35),
     "CRWD": (0.22, 0.12, 0.2822, 0.30),
     "ARM": (0.25, 0.12, 0.215, 0.35),
+    "ALAB": (0.40, 0.12, 0.2215, 0.35),
+    "COHR": (0.25, 0.10, -0.1448, 0.15),
 }
 
 # Yahoo's sharesOutstanding is incomplete for multi-class names; use total shares
