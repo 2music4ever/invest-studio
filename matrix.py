@@ -17,14 +17,18 @@ import data as D
 # Book names + watchlist, in the user's usual order.
 MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
                   "AMD", "MU", "ANET", "VST", "SPCX", "PLTR", "MRVL",
-                  "LLY", "TSLA", "ASML", "CRWD", "ARM", "ALAB", "COHR"]
+                  "LLY", "TSLA", "ASML", "CRWD", "ARM", "ALAB", "COHR", "NBIS"]
 
 # ticker -> (bear, base, bull) DCF values where a full stack exists.
 # All 18 book names have stacks (Nov 2, 2026 run, 10% hurdle, 3% terminal);
 # ARM added Nov 5, 2026 (post-FQ2 FY27 refresh, same convention);
 # ALAB + COHR added Nov 5, 2026 (post-print stacks, same convention).
+# NBIS added Nov 5, 2026 (pre-Q3-print stack; bear floored at $0, raw -$36.11);
+# PLTR + ANET refreshed Nov 5, 2026 (post-Q3-print TTMs, same convention).
 # VST bear is floored at $0: raw model value is -$0.50 (EV below net debt),
 # but limited liability floors equity at zero — see the tab footnote.
+# NBIS bear is floored the same way (raw -$36.11: peak-burn years swamp the
+# terminal value at bear growth/margins).
 DCF_STACKS = {
     "MU": (342.0, 811.0, 1709.0),
     "NVDA": (227.0, 292.0, 387.0),
@@ -35,10 +39,10 @@ DCF_STACKS = {
     "AVGO": (134.0, 231.0, 421.0),
     "AMZN": (84.0, 148.0, 248.0),
     "TSM": (219.0, 414.0, 599.0),
-    "ANET": (80.0, 141.0, 226.0),
+    "ANET": (94.0, 148.0, 238.0),
     "VST": (0.0, 50.0, 95.0),
     "SPCX": (17.0, 81.0, 273.0),
-    "PLTR": (48.0, 106.0, 222.0),
+    "PLTR": (57.0, 125.0, 263.0),
     "MRVL": (39.0, 78.0, 149.0),
     "LLY": (322.0, 592.0, 976.0),
     "TSLA": (28.0, 71.0, 145.0),
@@ -47,6 +51,7 @@ DCF_STACKS = {
     "ARM": (33.0, 87.0, 141.0),
     "ALAB": (110.0, 244.0, 555.0),
     "COHR": (74.0, 231.0, 566.0),
+    "NBIS": (0.0, 47.0, 212.0),
 }
 
 # ticker -> (display label, anchor price the reverse-DCF was run at)
@@ -54,6 +59,9 @@ DCF_STACKS = {
 # uniform 10-yr growth, 10% hurdle, 3% terminal, lab FCF convention gross of SBC).
 # ARM added Nov 5, 2026 (anchor = live price at run time, $168.57).
 # ALAB + COHR added Nov 5, 2026 (anchors = live prices at run time).
+# NBIS added Nov 5, 2026 (anchor $120.37, Nov 5 close); PLTR refreshed
+# Nov 5, 2026 (anchor $154.99, Nov 5 close); ANET refreshed Nov 5, 2026
+# (anchor $159.16, Nov 5).
 PRICED_IN = {
     "GOOGL": ("11.8% @ $279", 279.0),
     "AMD": ("27–30% @ $557", 557.0),
@@ -63,10 +71,10 @@ PRICED_IN = {
     "AVGO": ("16.4% @ $326", 326.0),
     "AMZN": ("16.3% @ $249", 249.0),
     "TSM": ("15.0% @ $403", 403.0),
-    "ANET": ("16.8% @ $165", 165.0),
+    "ANET": ("15.5% @ $159.16", 159.16),
     "VST": ("10.9% @ $135", 135.0),
     "SPCX": ("42.5% @ $138", 138.0),
-    "PLTR": ("31.7% @ $181", 181.0),
+    "PLTR": ("27.0% @ $154.99", 154.99),
     "MRVL": ("26.0% @ $170", 170.0),
     "LLY": ("20.9% @ $1,419", 1419.0),
     "TSLA": ("33.9% @ $404", 404.0),
@@ -76,6 +84,7 @@ PRICED_IN = {
     "ARM": ("28.2% @ $168.57", 168.57),
     "ALAB": ("22.4% @ $184.06", 184.06),
     "COHR": ("15.8% @ $195.09", 195.09),
+    "NBIS": ("35.3% @ $120.37", 120.37),
 }
 
 # Base-case DCF assumptions behind the DCF base column, in MATRIX_TICKERS order:
@@ -96,10 +105,10 @@ BASE_ASSUMPTIONS = {
     "GOOGL": (0.15, 0.08, 0.2421, 0.25),
     "AMD": (0.25, 0.15, 0.203, 0.35),
     "MU": (0.10, 0.05, 0.4427, 0.30),
-    "ANET": (0.20, 0.08, 0.489, 0.45),
+    "ANET": (0.20, 0.08, 0.4334, 0.42),
     "VST": (0.04, 0.02, 0.1174, 0.13),
     "SPCX": (0.45, 0.25, -1.253, 0.25),
-    "PLTR": (0.32, 0.15, 0.5455, 0.58),
+    "PLTR": (0.32, 0.15, 0.5562, 0.58),
     "MRVL": (0.20, 0.10, 0.1823, 0.20),
     "LLY": (0.14, 0.05, 0.1352, 0.28),
     "TSLA": (0.12, 0.06, 0.0318, 0.11),
@@ -108,13 +117,14 @@ BASE_ASSUMPTIONS = {
     "ARM": (0.25, 0.12, 0.215, 0.35),
     "ALAB": (0.40, 0.12, 0.2215, 0.35),
     "COHR": (0.25, 0.10, -0.1448, 0.15),
+    "NBIS": (0.45, 0.15, -4.3417, 0.25),
 }
 
 # Yahoo's sharesOutstanding is incomplete for multi-class names; use total shares
 # confirmed from market cap / price. SPCX: Q3 report total A+B. META: Class A only
 # in Yahoo's count (2.214B) vs 2.557B total A+B. PLTR: total A+B+F vs 2.301B reported.
 # Market cap is rebuilt from the override, which also corrects it.
-SHARES_OVERRIDE = {"SPCX": 13.58e9, "META": 2.557e9, "PLTR": 2.4031e9}
+SHARES_OVERRIDE = {"SPCX": 13.58e9, "META": 2.557e9, "PLTR": 2.4095e9}
 
 GROUPS = {
     "Score": ["Score"],

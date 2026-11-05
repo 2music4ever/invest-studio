@@ -514,3 +514,44 @@ margin convergence over 5 years. Format: "X% @ $price".
 - Q1 FY27: rev $2.37B vs ~$2.31B; non-GAAP EPS $2.09 vs ~$1.98; Datacentre & Communications $1.95B (+79%, 82% of revenue); Q2 guide $2.55–2.75B (mid $2.65B vs ~$2.53B), GM 40–42%, EPS $2.28–2.48; PhotonLink >$100M Mar-27 qtr, >$250M/qtr before end CY2027.
 - Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.25, 0.10, -0.1448, 0.15) = $231.23 ✓; bear $73.93 ✓; bull $565.80 ✓.
 - Verdict: BUY — 18 shares @ $169.30 executed Nov 5 (new position, $3,047.40). Added to Matrix Nov 5 (21st name). Variant logged as entry 7 (PhotonLink/CPO mix to >45% GM + FCF inflection; score at Feb 2027 print).
+
+## NBIS — VERIFIED by parent (Nov 5, ~13:45 PT)
+- Price: $120.37 (Nov 5 regular-session close, Finnhub; prev close $141.52, -14.94% on the day; day range $113.30–134.80; 52-wk $73.52–299.86)
+- TTM revenue: $1,355.1M (through Q2'26; Q2'26 rev $582.3M, +454% YoY); TTM FCF -$5,883.8M → fcf_margin -434.2% (peak data-center buildout capex)
+- fcf_margin_norm (base): 25% (margin converges from -434.2% over 5 yrs; SPCX-style convention)
+- Shares: 253.9M implied total (Yahoo 220.4M is Class A only; lab 238.4M)
+- Net debt: $2,153.2M
+- DCF cases: bear $0 floored (raw -$36.11; 30%/8%, 15%) / base $47 (45%/15%, 25%) / bull $212 (60%/20%, 30%)
+- Reverse-DCF: **35.3% @ $120.37** (norm 25%; norm 30% → 32.4%)
+- Sensitivity: faster base growth (60%/15%, norm 25%) → $112.69 — the DCF's honest answer is a wide $47–113 range, not a point; it charges five years of peak burn and assumes smooth growth while the business is a step-change ramp (ARR guide $7–9B vs $1.36B TTM revenue). Independent check: alcapitaladvisory pure DCF $0.00 (Nov 2).
+- Exit-multiple (primary frame): 5-yr revenue at 40/50/60% CAGR = $7.3B/$10.3B/$14.2B; at 25% margin, 25x P/E → $103/$149/$209; center ~$149.
+- Consensus: MarketBeat $239.56 Moderate Buy (22 analysts, range $84–410); TipRanks $296.73 (13 analysts). Recent: Citi $324→$265 Buy (Nov 4), Piper $237→$185 Neutral (Oct 21), Rosenblatt initiated Buy $304 (Oct 8), BNP Exane $260→$399 (Sep 24), GS $328, BofA $310, MS $144 EW, Redburn Sell $84.
+- Peers EV/Sales (fresh Nov 5): NBIS ~23x vs CRWV 8.7x, IREN 13.1x, APLD 9.2x. All four burn cash (FCF margins -180% to -522%).
+- Q3'26 print Nov 12 pre-open: consensus revenue ~$907–917M, EPS -$0.61 to -$0.72; Zacks ESP +50.8%, Rank #2. Q2 beat: EPS -$0.12 vs -$0.67, rev $582.3M vs $567.9M.
+- New risk Nov 5: Microsoft tightening oversight of neocloud projects (Bloomberg via Reuters) — stepping away from risky projects, debating new deals; NBIS/IREN fell 13%+ in afternoon trading. Existing contracts not reported cancelled; risk is slower backlog conversion / fewer new deals.
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.45, 0.15, -4.3417, 0.25) = $47.33 ✓; bear raw -$36.11 (floored $0 in the Matrix, VST precedent); bull $211.98 ✓.
+- Verdict: full stack delivered Nov 5 (pre-print). Position: 35 shares @ $117.98 (Nov 5). Added to Matrix Nov 5 (22nd name). Variant (his: EU sovereign + software attach) framed Nov 4; log entry declined by him — score at Nov 12 print only when relevant.
+
+## PLTR — VERIFIED by parent (Nov 5, ~13:45 PT; refresh by subagent, verified by parent)
+- Price: $154.99 (Nov 5 regular-session close, Finnhub; prev close $171.70, -9.73% on the day)
+- TTM revenue: $7,288.3M (Q4'25 $1,406.8M + Q1'26 $1,632.6M + Q2'26 $1,935.5M + Q3'26 $2,313.4M; Q3 confirmed by Nov 2 release); TTM FCF $4,054.0M → fcf_margin 55.62% (OCF $4,097.2M − capex $43.2M; Q3 OCF $1,204.6M verified vs release)
+- fcf_margin_norm (base): 58% (margin converges from 55.62% over 5 yrs)
+- Shares: 2,409.5M all-class (Q3'26 10-Q cover Oct 26, 2026; Matrix override corrected from 2.4031B)
+- Net debt: -$10,336.3M (net cash; cash $3,619.4M + securities $6,942.1M − debt $225.3M)
+- DCF cases: bear $57 (20%/8%, 50%) / base $125 (32%/15%, 58%) / bull $263 (45%/22%, 62%) — legs unchanged from Nov 2; base +18.0% on the FCF lift
+- Reverse-DCF: **27.0% @ $154.99** (norm 58%; was 31.7% @ $181 Nov 2 — price fell while fundamentals rose)
+- Consensus: Yahoo mean $217.97, median $231.50 (Matrix reads live); TipRanks $229.09 Strong Buy. Recent: Barclays $265→$273 (Nov 4), Citi $250→$265 (Nov 3), Truist $223→$250 (Nov 3), MS $205→$233 (Nov 3).
+- Data-quality note: Yahoo quarterly_financials DID update for PLTR (Q3'26 column present); Yahoo info-field freeCashflow ($2,652.5M) is wrong again vs quarterly sums ($4,054.0M).
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.32, 0.15, 0.5562, 0.58) = $124.96 ✓ (subagent's figure confirmed independently).
+- Verdict: Matrix refreshed Nov 5 (was $48/$106/$222, 31.7% @ $181). Position: 8 shares. Price $154.99 is +24% above the new base, 41% below bull.
+
+## ANET — VERIFIED by parent (Nov 5, ~13:45 PT; refresh Nov 5, Matrix updated)
+- Price: $159.16 (Nov 5; prev close $178.48, -10.82% on the day)
+- TTM revenue: $11,893M (hand-built: Q4'25 $2,488M + Q1'26 $2,709M + Q2'26 $3,036M + Q3'26 $3,660M print); TTM FCF $5,155M → fcf_margin 43.34%
+- fcf_margin_norm (base): 42%
+- Shares: 1,263.4M; net cash $14,359M
+- DCF cases: bear $94 (12%/5%, 38%) / base $148 (20%/8%, 42%) / bull $238 (28%/12%, 45%)
+- Reverse-DCF: **15.5% @ $159.16** (norm 42%; yrs 1–5 22.0% at 8% yrs 6–10)
+- Exit-multiple center ~$164; consensus $240.24 = bull case. Verdict: fairly valued, no asymmetry (was $80/$141/$226, 16.8% @ $165 pre-print).
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.20, 0.08, 0.4334, 0.42) = $148.45 ✓.
+- Note: user sold his 15 ANET shares Nov 5 morning and did not re-buy — ANET is a watchlist name now, not a holding; the Matrix row is refreshed with the verified post-print stack for completeness.
