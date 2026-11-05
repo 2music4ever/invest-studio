@@ -477,3 +477,15 @@ margin convergence over 5 years. Format: "X% @ $price".
   two paths are reconstructions, not contemporaneous records. If the original
   Oct 27/31 workpapers surface with different paths, correct the table — the
   displayed base values themselves do not change.
+
+## ARM — VERIFIED by parent (Nov 5, ~11:15 PT)
+- Price: $168.57 (Finnhub regular session Nov 5; prev close $191.80, -12.1% on the day)
+- TTM revenue: $5,464M (lab quarterly sums, includes FQ2 FY27 $1,443M); TTM FCF $1,175M → fcf_margin 21.5% (down from 28.5% Oct 26)
+- fcf_margin_norm (base): 35% (royalty model, asset-light; margin converges from 21.5% over 5 yrs)
+- Shares: 1.068B (Yahoo sharesOutstanding; single-class ADS, market-cap check ~$180B @ $168.57 consistent)
+- Net debt: -$3,403M (net cash $3,403M; totalCash basis)
+- DCF cases: bear $33 (12%/6%, 25%) / base $87 (25%/12%, 35%) / bull $141 (32%/15%, 40%)
+- Reverse-DCF: **28.2% @ $168.57** (norm 35%; norm 30% → 30.3%; split yrs 1–5 43.8% at 12% yrs 6–10)
+- FQ2 FY27: rev $1.44B (+27%) vs $1.38B cons; adj EPS $0.52 vs $0.47; royalty $670M (+8%) missed ~$705–721M; license $773M (+50%); Q3 guide rev $1.54B ±$50M, EPS $0.56 ±$0.04; royalty guided low-single-digit; AGI CPU $2B across FY27–28.
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.25, 0.12, 0.215, 0.35) = $87.29 ✓; bear $32.95 ✓; bull $141.42 ✓; reverse at 28.18% ✓.
+- Verdict: PASS at $168.57 (Oct 26 PASS at $222.11 stands, refreshed). User's level: wait till $141 (fresh bull case). Added to Matrix Nov 5 (19th name).
