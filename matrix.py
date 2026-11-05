@@ -25,6 +25,8 @@ MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
 # ALAB + COHR added Nov 5, 2026 (post-print stacks, same convention).
 # NBIS added Nov 5, 2026 (pre-Q3-print stack; bear floored at $0, raw -$36.11);
 # PLTR + ANET refreshed Nov 5, 2026 (post-Q3-print TTMs, same convention).
+# AMD refreshed Nov 5, 2026 (post-Q3-print TTM; bear/bull legs reconstructed,
+# see dcf_reverse_results.md).
 # VST bear is floored at $0: raw model value is -$0.50 (EV below net debt),
 # but limited liability floors equity at zero — see the tab footnote.
 # NBIS bear is floored the same way (raw -$36.11: peak-burn years swamp the
@@ -32,7 +34,7 @@ MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
 DCF_STACKS = {
     "MU": (342.0, 811.0, 1709.0),
     "NVDA": (227.0, 292.0, 387.0),
-    "AMD": (341.0, 470.0, 583.0),
+    "AMD": (363.0, 500.0, 621.0),
     "GOOGL": (169.0, 281.0, 459.0),
     "META": (392.0, 738.0, 1128.0),
     "MSFT": (264.0, 390.0, 554.0),
@@ -61,10 +63,11 @@ DCF_STACKS = {
 # ALAB + COHR added Nov 5, 2026 (anchors = live prices at run time).
 # NBIS added Nov 5, 2026 (anchor $120.37, Nov 5 close); PLTR refreshed
 # Nov 5, 2026 (anchor $154.99, Nov 5 close); ANET refreshed Nov 5, 2026
-# (anchor $159.16, Nov 5).
+# (anchor $159.16, Nov 5); AMD refreshed Nov 5, 2026 (anchor $404.40,
+# Nov 5 close).
 PRICED_IN = {
     "GOOGL": ("11.8% @ $279", 279.0),
-    "AMD": ("27–30% @ $557", 557.0),
+    "AMD": ("17.5% @ $404.40", 404.40),
     "NVDA": ("16.7% @ $204.64", 204.64),
     "META": ("9.2% @ $612", 612.0),
     "MSFT": ("14.0% @ $514", 514.0),
@@ -103,7 +106,7 @@ BASE_ASSUMPTIONS = {
     "TSM": (0.20, 0.10, 0.2958, 0.37),
     "AMZN": (0.14, 0.06, -0.0436, 0.10),
     "GOOGL": (0.15, 0.08, 0.2421, 0.25),
-    "AMD": (0.25, 0.15, 0.203, 0.35),
+    "AMD": (0.25, 0.15, 0.1553, 0.35),
     "MU": (0.10, 0.05, 0.4427, 0.30),
     "ANET": (0.20, 0.08, 0.4334, 0.42),
     "VST": (0.04, 0.02, 0.1174, 0.13),

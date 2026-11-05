@@ -555,3 +555,17 @@ margin convergence over 5 years. Format: "X% @ $price".
 - Exit-multiple center ~$164; consensus $240.24 = bull case. Verdict: fairly valued, no asymmetry (was $80/$141/$226, 16.8% @ $165 pre-print).
 - Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.20, 0.08, 0.4334, 0.42) = $148.45 ✓.
 - Note: user sold his 15 ANET shares Nov 5 morning and did not re-buy — ANET is a watchlist name now, not a holding; the Matrix row is refreshed with the verified post-print stack for completeness.
+
+## AMD — VERIFIED by parent (Nov 5, ~13:45 PT; refresh by subagent, verified by parent)
+- Price: $404.40 (Nov 5 regular-session close, Finnhub; prev close $488.78, -17.26% on the day; after-hours $411.02)
+- TTM revenue: $45,436M (Q4'25 $10,270M + Q1'26 $10,253M + Q2'26 $11,536M + Q3'26 $13,377M; Q3 confirmed by 8-K Ex. 99.1, +45% YoY). Yahoo quarterly_financials were FRESH this time (Q3'26 column present); get_fundamentals agrees exactly.
+- TTM FCF: $7,056M → fcf_margin 15.53% (Q4'25 $2,378M + Q1'26 $2,566M + Q2'26 $1,558M + Q3'26 $554M; Q3 FCF verified: OCF $1,202M − capex $648M = $554M). Margin fell from 20.34% pre-print because Q3'25 FCF ($1,901M) rolled off and Q3'26 printed only $554M on a $2,995M inventory build (inventory $11,463M, receivables $9,209M).
+- fcf_margin_norm (base): 35% (margin converges from 15.53% over 5 yrs). The Q3 FCF collapse is working-capital timing, not structural margin loss — norm stands.
+- Shares: 1,661M diluted (Q3'26 release; Q4 guide ~1.67B incl. Taalas + World Labs closings)
+- Net cash: $8,697M (statement basis: cash + ST investments $15,776M − total debt $7,079M actual borrowings). Lab/info variant (Yahoo totalDebt $9,211M incl. warrant liabilities + leases) → net cash $6,565M, base $505.11 — the refresh is robust to the convention (variants span $5.57 on the base).
+- DCF cases: bear $363 (25%/10%, 30%) / base $500 (25%/15%, 35%) / bull $621 (28%/18%, 35%) — legs kept from Nov 2. NOTE: the Nov 2 base leg (25%/15%, 35%) is confirmed (reproduces $469.80 vs displayed $470), but the Nov 2 bear/bull legs were never recorded — the subagent reconstructed them by grid search (bear 25%/10%/30% → $341.80 vs displayed $341; bull 28%/18%/35% → $583.16 vs $583). Other round sets land within ~$2; if the original workpapers surface, re-run the legs — the displayed base is unaffected.
+- Reverse-DCF: **17.5% @ $404.40** (norm 35%; norm 30% → 19.5%; split yrs 1–5 22.2% at 12% yrs 6–10). Was 27–30% @ $557 Nov 2 — the price fell 27% while the revenue base rose 10%.
+- Consensus: Yahoo mean $648.24 (48 analysts; Matrix reads live); post-print actions BofA $650, UBS $700, Stifel $725; HSBC Hold $540.
+- Parent check: base recomputed from stored BASE_ASSUMPTIONS (0.25, 0.15, 0.1553, 0.35) = $500.01 ✓; bear $362.69 ✓; bull $621.45 ✓ (subagent's figures confirmed independently).
+- Levels: refreshed base $500.01 coincides with his $500 "seriously consider" level; the $404.40 close is below his original $450 bar. Price is ~19% below the refreshed base and ~11% above the bear. Position: 36 shares.
+- Verdict: Matrix refreshed Nov 5 (was $341/$470/$583, 27–30% @ $557). The print strengthens demand (Q4 guide ~$17B ±3% vs ~$16.3B Street; 2027 revenue guided >80%; server revenue to double FY27) but HBM is the supply gate and Q4 GM is guided ~55% (under the 55.3% consensus).
