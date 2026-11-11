@@ -24,6 +24,9 @@ MATRIX_TICKERS = ["NVDA", "META", "MSFT", "AVGO", "TSM", "AMZN", "GOOGL",
 # ARM added Nov 5, 2026 (post-FQ2 FY27 refresh, same convention);
 # ALAB + COHR added Nov 5, 2026 (post-print stacks, same convention).
 # NBIS added Nov 5, 2026 (pre-Q3-print stack; bear floored at $0, raw -$36.11);
+# re-worked Nov 11, 2026 (variant-explicit: sovereign durability 50%/20%
+# growth, software attach 30% norm margin; shares ~310M + net debt ~$0.5B
+# verified from filings — bear floored at $0, raw -$6.33).
 # PLTR + ANET refreshed Nov 5, 2026 (post-Q3-print TTMs, same convention).
 # AMD refreshed Nov 5, 2026 (post-Q3-print TTM; bear/bull legs reconstructed,
 # see dcf_reverse_results.md).
@@ -53,7 +56,7 @@ DCF_STACKS = {
     "ARM": (33.0, 87.0, 141.0),
     "ALAB": (110.0, 244.0, 555.0),
     "COHR": (74.0, 231.0, 566.0),
-    "NBIS": (0.0, 47.0, 212.0),
+    "NBIS": (0.0, 118.0, 284.0),
 }
 
 # ticker -> (display label, anchor price the reverse-DCF was run at)
@@ -61,7 +64,9 @@ DCF_STACKS = {
 # uniform 10-yr growth, 10% hurdle, 3% terminal, lab FCF convention gross of SBC).
 # ARM added Nov 5, 2026 (anchor = live price at run time, $168.57).
 # ALAB + COHR added Nov 5, 2026 (anchors = live prices at run time).
-# NBIS added Nov 5, 2026 (anchor $120.37, Nov 5 close); PLTR refreshed
+# NBIS added Nov 5, 2026 (anchor $120.37, Nov 5 close); re-worked Nov 11,
+# 2026 (variant-explicit, norm 30%; anchor ~$157 live Nov 11, 36.8% uniform);
+# PLTR refreshed
 # Nov 5, 2026 (anchor $154.99, Nov 5 close); ANET refreshed Nov 5, 2026
 # (anchor $159.16, Nov 5); AMD refreshed Nov 5, 2026 (anchor $404.40,
 # Nov 5 close).
@@ -87,7 +92,7 @@ PRICED_IN = {
     "ARM": ("28.2% @ $168.57", 168.57),
     "ALAB": ("22.4% @ $184.06", 184.06),
     "COHR": ("15.8% @ $195.09", 195.09),
-    "NBIS": ("35.3% @ $120.37", 120.37),
+    "NBIS": ("36.8% @ $157", 157.0),
 }
 
 # Base-case DCF assumptions behind the DCF base column, in MATRIX_TICKERS order:
@@ -120,7 +125,7 @@ BASE_ASSUMPTIONS = {
     "ARM": (0.25, 0.12, 0.215, 0.35),
     "ALAB": (0.40, 0.12, 0.2215, 0.35),
     "COHR": (0.25, 0.10, -0.1448, 0.15),
-    "NBIS": (0.45, 0.15, -4.3417, 0.25),
+    "NBIS": (0.50, 0.20, -4.3417, 0.30),
 }
 
 # Yahoo's sharesOutstanding is incomplete for multi-class names; use total shares
